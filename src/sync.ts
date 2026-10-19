@@ -167,3 +167,11 @@ export async function setPassword(password: string) {
   const { error } = await supabase!.auth.updateUser({ password })
   if (error) throw new Error(error.message)
 }
+
+export async function signInWithProvider(provider: 'google' | 'kakao') {
+  const { error } = await supabase!.auth.signInWithOAuth({
+    provider,
+    options: { redirectTo: location.origin + location.pathname },
+  })
+  if (error) throw new Error(error.message)
+}
