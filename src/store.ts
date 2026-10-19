@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react'
-import type { Category, Kind, Row, Todo } from './types'
+import type { Category, Kind, Row, Todo, Visibility } from './types'
 
 /**
  * Local-first store. Everything lives in localStorage so the app works offline
@@ -32,7 +32,7 @@ const newId = () => crypto.randomUUID()
 
 function initial(): Persisted {
   const t = now()
-  const def: Category = { id: 'default', name: '할 일', color: PALETTE[0], private: false, position: 0, deleted: false, updated_at: t }
+  const def: Category = { id: 'default', name: '할 일', color: PALETTE[0], visibility: 'followers', allowed_ids: [], private: false, position: 0, deleted: false, updated_at: t }
   return { categories: { default: def }, todos: {}, dirty: ['categories:default'], cursor: {}, userId: null }
 }
 
@@ -42,10 +42,15 @@ function load(): Persisted {
     if (raw) {
       const db: Persisted = { ...initial(), ...JSON.parse(raw) }
       // fill fields added after the first release
-      for (const c of Object.values(db.categories)) c.private ??= false
+      for (const c of Object.values(db.categories)) {
+        c.private ??= false
+        c.visibility ??= c.private ? 'private' : 'followers'
+        c.allowed_ids ??= []
+      }
       for (const t of Object.values(db.todos)) {
         t.pomodoros ??= 0
         t.focus_seconds ??= 0
+        t.time ??= null
       }
       return db
     }
@@ -117,6 +122,7 @@ export function addTodo(title: string, date: string, category_id: string) {
     date,
     category_id,
     done: false,
+    time: null,
     pomodoros: 0,
     focus_seconds: 0,
     position: Date.now(),
@@ -143,7 +149,7 @@ export const deleteTodo = (id: string) => updateTodo(id, { deleted: true })
 export function addCategory(name: string) {
   const used = new Set(snapshot.categories.map((c) => c.color))
   const color = PALETTE.find((c) => !used.has(c)) ?? PALETTE[snapshot.categories.length % PALETTE.length]
-  put('categories', { id: newId(), name, color, private: false, position: Date.now(), deleted: false, updated_at: now() })
+  put('categories', { id: newId(), name, color, visibility: 'followers', allowed_ids: [], private: false, position: Date.now(), deleted: false, updated_at: now() })
   commit(true)
 }
 
@@ -152,6 +158,12 @@ export function updateCategory(id: string, patch: Partial<Omit<Category, 'id'>>)
   if (!cur) return
   put('categories', { ...cur, ...patch, updated_at: now() })
   commit(true)
+}
+
+export function setVisibility(id: string, visibility: Visibility, allowed_ids?: string[]) {
+  const cur = db.categories[id]
+  if (!cur) return
+  updateCategory(id, { visibility, private: visibility === 'private', allowed_ids: allowed_ids ?? cur.allowed_ids })
 }
 
 /** Deletes the category together with its todos. */
@@ -204,6 +216,12 @@ export function applyRemote<K extends Kind>(kind: K, rows: (Row<K> & { user_id?:
   for (const { user_id: _u, synced_at, ...raw } of rows) {
     // Postgres returns "+00:00" offsets; normalize so string comparison stays valid
     const row = { ...raw, updated_at: new Date(raw.updated_at).toISOString() }
+    // rows written before a column existed come back without it
+    const r = row as Record<string, unknown>
+    if (kind === 'categories') {
+      r.visibility ??= r.private ? 'private' : 'followers'
+      r.allowed_ids ??= []
+    } else r.time ??= null
     const local = tbl[row.id]
     const localPending = dirty.has(`${kind}:${row.id}`)
     if (!local || !localPending || row.updated_at >= local.updated_at) {

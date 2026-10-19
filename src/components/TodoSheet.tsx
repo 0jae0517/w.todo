@@ -73,6 +73,17 @@ export default function TodoSheet({ todo, categories, reactions, onClose, onFocu
           <input type="date" value={todo.date} onChange={(e) => e.target.value && moveTo(e.target.value)} />
         </label>
       </div>
+      <div className="field">
+        <span>시간</span>
+        <div className="time-pick">
+          <input type="time" value={todo.time ?? ''} onChange={(e) => updateTodo(todo.id, { time: e.target.value || null })} />
+          {todo.time && (
+            <button className="link" onClick={() => updateTodo(todo.id, { time: null })}>
+              없음
+            </button>
+          )}
+        </div>
+      </div>
       <label className="field">
         <span>카테고리</span>
         <select value={todo.category_id} onChange={(e) => updateTodo(todo.id, { category_id: e.target.value })}>

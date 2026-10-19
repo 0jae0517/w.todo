@@ -1,11 +1,14 @@
-import { useState } from 'react'
-import { PALETTE, addCategory, deleteCategory, moveCategory, updateCategory } from '../store'
-import type { Category } from '../types'
+import { useEffect, useState } from 'react'
+import { listFollowers, type Profile } from '../social'
+import { PALETTE, addCategory, deleteCategory, moveCategory, setVisibility, updateCategory } from '../store'
+import { useSync } from '../sync'
+import type { Category, Visibility } from '../types'
 import Sheet from './Sheet'
 
 export default function CategorySheet({ categories, onClose }: { categories: Category[]; onClose: () => void }) {
   const [name, setName] = useState('')
   const [picking, setPicking] = useState<string | null>(null)
+  const [visFor, setVisFor] = useState<string | null>(null)
   const add = () => {
     if (name.trim()) addCategory(name.trim())
     setName('')
@@ -13,7 +16,7 @@ export default function CategorySheet({ categories, onClose }: { categories: Cat
 
   return (
     <Sheet title="카테고리 관리" onClose={onClose}>
-      <p className="sheet-sub">👥 팔로워에게 공개 · 🔒 나만 보기</p>
+      <p className="sheet-sub">👥 팔로워 공개 · 👤 일부 공개 · 🔒 나만 보기</p>
       <ul className="cat-list">
         {categories.map((c, i) => (
           <li key={c.id}>
@@ -32,12 +35,12 @@ export default function CategorySheet({ categories, onClose }: { categories: Cat
                 }}
               />
               <button
-                className={`icon-btn vis ${c.private ? 'on' : ''}`}
-                onClick={() => updateCategory(c.id, { private: !c.private })}
-                aria-label={c.private ? '나만 보기' : '팔로워 공개'}
-                title={c.private ? '나만 보기 (팔로워에게 안 보여요)' : '팔로워에게 공개'}
+                className="icon-btn vis"
+                onClick={() => setVisFor(visFor === c.id ? null : c.id)}
+                aria-label={`공개 범위: ${VIS[c.visibility].label}`}
+                title={VIS[c.visibility].label}
               >
-                {c.private ? '🔒' : '👥'}
+                {VIS[c.visibility].icon}
               </button>
               <button className="icon-btn" disabled={i === 0} onClick={() => moveCategory(c.id, -1)} aria-label="위로">↑</button>
               <button className="icon-btn" disabled={i === categories.length - 1} onClick={() => moveCategory(c.id, 1)} aria-label="아래로">↓</button>
@@ -49,6 +52,7 @@ export default function CategorySheet({ categories, onClose }: { categories: Cat
                 🗑
               </button>
             </div>
+            {visFor === c.id && <VisibilityPanel category={c} />}
             {picking === c.id && (
               <div className="palette">
                 {PALETTE.map((p) => (
@@ -79,5 +83,61 @@ export default function CategorySheet({ categories, onClose }: { categories: Cat
         <button className="primary" onClick={add}>추가</button>
       </div>
     </Sheet>
+  )
+}
+
+const VIS: Record<Visibility, { icon: string; label: string }> = {
+  followers: { icon: '👥', label: '팔로워 공개' },
+  selected: { icon: '👤', label: '일부 공개' },
+  private: { icon: '🔒', label: '나만 보기' },
+}
+
+function VisibilityPanel({ category }: { category: Category }) {
+  const { session } = useSync()
+  const [followers, setFollowers] = useState<Profile[] | null>(null)
+  const selected = category.visibility === 'selected'
+
+  useEffect(() => {
+    if (!selected || !session) return
+    listFollowers().then(setFollowers).catch(() => setFollowers([]))
+  }, [selected, session])
+
+  const toggle = (id: string) => {
+    const ids = category.allowed_ids.includes(id) ? category.allowed_ids.filter((x) => x !== id) : [...category.allowed_ids, id]
+    setVisibility(category.id, 'selected', ids)
+  }
+
+  return (
+    <div className="vis-panel">
+      <div className="vis-options">
+        {(Object.keys(VIS) as Visibility[]).map((v) => (
+          <button key={v} className={category.visibility === v ? 'on' : ''} onClick={() => setVisibility(category.id, v)}>
+            {VIS[v].icon} {VIS[v].label}
+          </button>
+        ))}
+      </div>
+      {selected &&
+        (!session ? (
+          <p className="sheet-sub">로그인하면 볼 수 있는 팔로워를 고를 수 있어요.</p>
+        ) : followers === null ? (
+          <p className="sheet-sub">팔로워 불러오는 중…</p>
+        ) : followers.length === 0 ? (
+          <p className="sheet-sub">아직 팔로워가 없어요. 팔로워가 생기면 여기서 고를 수 있어요.</p>
+        ) : (
+          <>
+            <p className="sheet-sub">체크한 팔로워만 이 카테고리를 볼 수 있어요.</p>
+            <ul className="pick-list">
+              {followers.map((f) => (
+                <li key={f.id}>
+                  <label>
+                    <input type="checkbox" checked={category.allowed_ids.includes(f.id)} onChange={() => toggle(f.id)} />
+                    {f.name || f.username} <span className="handle">@{f.username}</span>
+                  </label>
+                </li>
+              ))}
+            </ul>
+          </>
+        ))}
+    </div>
   )
 }

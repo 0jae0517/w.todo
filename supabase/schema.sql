@@ -66,6 +66,13 @@ end $$;
 alter table public.categories add column if not exists private boolean not null default false;
 alter table public.todos add column if not exists pomodoros integer not null default 0;
 alter table public.todos add column if not exists focus_seconds integer not null default 0;
+alter table public.todos add column if not exists time text check (time ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$');
+
+-- 공개 범위: followers(팔로워 공개) / private(나만 보기) / selected(일부 공개: allowed_ids 의 팔로워만)
+alter table public.categories add column if not exists visibility text not null default 'followers'
+  check (visibility in ('followers', 'private', 'selected'));
+alter table public.categories add column if not exists allowed_ids uuid[] not null default '{}';
+update public.categories set visibility = 'private' where private and visibility = 'followers';
 
 -- ============================================================
 -- 프로필 / 팔로우
@@ -108,18 +115,27 @@ language sql stable security definer set search_path = public as $$
   select exists (select 1 from follows where follower_id = auth.uid() and followee_id = target)
 $$;
 
-create or replace function public.category_public(owner uuid, cat text) returns boolean
+-- 지금 로그인한 사람이 이 카테고리를 볼 수 있는지 (팔로우 여부는 정책에서 따로 확인)
+create or replace function public.category_visible(owner uuid, cat text) returns boolean
 language sql stable security definer set search_path = public as $$
-  select exists (select 1 from categories where user_id = owner and id = cat and not private and not deleted)
+  select exists (
+    select 1 from categories
+    where user_id = owner and id = cat and not deleted
+      and (visibility = 'followers' or (visibility = 'selected' and auth.uid() = any (allowed_ids)))
+  )
 $$;
 
--- 팔로워는 "나만 보기"가 아닌 카테고리와 그 안의 할 일을 볼 수 있음
+-- 팔로워는 공개 범위가 허락하는 카테고리와 그 안의 할 일을 볼 수 있음
 drop policy if exists "followers read categories" on public.categories;
 create policy "followers read categories" on public.categories for select to authenticated
-  using (not private and not deleted and public.is_following(user_id));
+  using (
+    not deleted and public.is_following(user_id)
+    and (visibility = 'followers' or (visibility = 'selected' and auth.uid() = any (allowed_ids)))
+  );
 drop policy if exists "followers read todos" on public.todos;
 create policy "followers read todos" on public.todos for select to authenticated
-  using (not deleted and public.is_following(user_id) and public.category_public(user_id, category_id));
+  using (not deleted and public.is_following(user_id) and public.category_visible(user_id, category_id));
+drop function if exists public.category_public(uuid, text);
 
 -- ============================================================
 -- 감정표현 (완료한 일에 팔로워가 남김, 한 사람당 할 일 하나에 하나)

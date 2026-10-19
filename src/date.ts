@@ -56,3 +56,9 @@ export function dayLabel(key: string) {
   const d = fromKey(key)
   return `${d.getMonth() + 1}월 ${d.getDate()}일 ${WEEKDAYS[d.getDay()]}요일`
 }
+
+/** "15:30" -> "오후 3:30" */
+export function timeLabel(hhmm: string) {
+  const [h, m] = hhmm.split(':').map(Number)
+  return `${h < 12 ? '오전' : '오후'} ${h % 12 || 12}:${String(m).padStart(2, '0')}`
+}

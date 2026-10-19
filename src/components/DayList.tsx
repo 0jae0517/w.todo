@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { timeLabel } from '../date'
 import { formatDuration } from '../pomodoro'
 import type { Reaction } from '../social'
 import { addTodo, updateTodo } from '../store'
@@ -17,7 +18,7 @@ interface Props {
   onReact?: (todoId: string, emoji: string | null) => void
 }
 
-const ORPHAN: Category = { id: '', name: '카테고리 없음', color: '#8a8f98', private: false, position: 0, deleted: false, updated_at: '' }
+const ORPHAN: Category = { id: '', name: '카테고리 없음', color: '#8a8f98', visibility: 'followers', allowed_ids: [], private: false, position: 0, deleted: false, updated_at: '' }
 
 export default function DayList({ date, categories, todos, reactions, myId, onOpenTodo, onReact }: Props) {
   const [adding, setAdding] = useState<string | null>(null)
@@ -39,7 +40,7 @@ export default function DayList({ date, categories, todos, reactions, myId, onOp
   return (
     <div className="day-list">
       {groups.map((cat) => {
-        const items = cat === ORPHAN ? orphans : todos.filter((t) => t.category_id === cat.id)
+        const items = (cat === ORPHAN ? orphans : todos.filter((t) => t.category_id === cat.id)).sort(byTime)
         const c = { '--c': cat.color } as React.CSSProperties
         return (
           <section key={cat.id || 'orphan'} className="group">
@@ -50,7 +51,8 @@ export default function DayList({ date, categories, todos, reactions, myId, onOp
               onClick={() => setAdding(adding === cat.id ? null : cat.id)}
             >
               <span className="group-name">{cat.name}</span>
-              {cat.private && <span className="lock" title="나만 보기">🔒</span>}
+              {cat.visibility === 'private' && <span className="lock" title="나만 보기">🔒</span>}
+              {cat.visibility === 'selected' && <span className="lock" title="일부 공개">👤</span>}
               {editable && cat !== ORPHAN && <span className="group-add">+</span>}
             </button>
             <ul>
@@ -67,6 +69,7 @@ export default function DayList({ date, categories, todos, reactions, myId, onOp
                       {t.done && '✓'}
                     </button>
                     <span className="todo-title" onClick={() => onOpenTodo?.(t.id)}>
+                      {t.time && <span className="todo-time">{timeLabel(t.time)}</span>}
                       {t.title}
                       {t.focus_seconds > 0 && <span className="tomato"> 🍅 {formatDuration(t.focus_seconds)}</span>}
                     </span>
@@ -97,6 +100,13 @@ export default function DayList({ date, categories, todos, reactions, myId, onOp
       })}
     </div>
   )
+}
+
+/** timed todos first, in time order; the rest keep their manual order */
+function byTime(a: Todo, b: Todo) {
+  if (a.time && b.time) return a.time.localeCompare(b.time) || a.position - b.position
+  if (a.time || b.time) return a.time ? -1 : 1
+  return a.position - b.position
 }
 
 function NewTodoInput({ onSubmit, onDone }: { onSubmit: (title: string) => void; onDone: () => void }) {

@@ -1,8 +1,14 @@
+/** followers: every follower · private: only me · selected: only `allowed_ids` followers */
+export type Visibility = 'followers' | 'private' | 'selected'
+
 export interface Category {
   id: string
   name: string
   color: string
-  /** hidden from followers */
+  visibility: Visibility
+  /** followers allowed to see it when visibility is 'selected' */
+  allowed_ids: string[]
+  /** legacy flag kept in sync with visibility === 'private' */
   private: boolean
   position: number
   deleted: boolean
@@ -15,6 +21,8 @@ export interface Todo {
   /** YYYY-MM-DD (local date) */
   date: string
   category_id: string
+  /** HH:MM, or null when the todo has no set time */
+  time: string | null
   done: boolean
   /** finished Pomodoro focus sessions spent on this todo */
   pomodoros: number

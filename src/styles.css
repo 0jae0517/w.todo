@@ -436,3 +436,15 @@ input, select {
 .cal-day.selected.red .num { background: var(--sun); }
 .cal-day.selected.blue .num { background: var(--sat); }
 .holiday { color: var(--sun); }
+
+.todo-time { font-size: 12px; font-weight: 700; color: var(--accent); margin-right: 6px; white-space: nowrap; }
+.time-pick { display: flex; align-items: center; gap: 10px; }
+.time-pick input { padding: 9px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); }
+.time-pick .link { margin: 0; }
+.vis-panel { padding: 8px 0 10px 34px; display: flex; flex-direction: column; gap: 8px; }
+.vis-options { display: flex; gap: 6px; flex-wrap: wrap; }
+.vis-options button { padding: 7px 12px; border-radius: 99px; background: var(--surface); font-size: 13px; border: 1px solid transparent; }
+.vis-options button.on { border-color: var(--accent); color: var(--accent); font-weight: 700; }
+.pick-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; max-height: 220px; overflow: auto; }
+.pick-list label { display: flex; align-items: center; gap: 10px; padding: 6px 0; font-size: 14px; cursor: pointer; }
+.pick-list input { width: 18px; height: 18px; accent-color: var(--accent); }
