@@ -9,6 +9,7 @@ import Me from './components/Me'
 import Pomodoro from './components/Pomodoro'
 import TodoSheet from './components/TodoSheet'
 import { dayLabel, todayKey } from './date'
+import { holidayName } from './holidays'
 import { useMyReactions } from './social'
 import { useStore } from './store'
 import { currentUserId, useSync } from './sync'
@@ -68,7 +69,10 @@ export default function App() {
             stats={stats}
           />
           <main>
-            <h2 className="day-title">{dayLabel(selected)}</h2>
+            <h2 className="day-title">
+            {dayLabel(selected)}
+            {holidayName(selected) && <span className="holiday"> · {holidayName(selected)}</span>}
+          </h2>
             <DayList
               date={selected}
               categories={categories}

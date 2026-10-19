@@ -427,3 +427,12 @@ input, select {
 .muted { color: var(--muted); font-size: 13px; }
 .ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tabbar button { max-width: 140px; }
+
+/* weekend & holiday colors */
+.cal-day.red .num { color: var(--sun); }
+.cal-day.blue .num { color: var(--sat); }
+.cal-day.today.red .num, .cal-day.today.blue .num { font-weight: 700; }
+.cal-day.selected .num { color: var(--bg); }
+.cal-day.selected.red .num { background: var(--sun); }
+.cal-day.selected.blue .num { background: var(--sat); }
+.holiday { color: var(--sun); }

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { dayLabel, monthGrid, todayKey } from '../date'
+import { holidayName } from '../holidays'
 import { byTodo, followingIds, follow, friendData, react, reactionsFor, unfollow, unreact, type Profile, type Reaction } from '../social'
 import { currentUserId } from '../sync'
 import type { Category, Todo } from '../types'
@@ -95,7 +96,10 @@ export default function FriendView({ friend, onBack }: { friend: Profile; onBack
       ) : (
         <>
           <Calendar selected={selected} onSelect={setSelected} mode={mode} onModeChange={setMode} stats={stats} />
-          <h2 className="day-title">{dayLabel(selected)}</h2>
+          <h2 className="day-title">
+            {dayLabel(selected)}
+            {holidayName(selected) && <span className="holiday"> · {holidayName(selected)}</span>}
+          </h2>
           <DayList
             date={selected}
             categories={data.categories}

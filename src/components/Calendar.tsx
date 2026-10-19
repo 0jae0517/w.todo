@@ -1,3 +1,4 @@
+import { holidayName } from '../holidays'
 import { WEEKDAYS, addDays, addMonths, fromKey, monthGrid, monthLabel, todayKey, weekOf } from '../date'
 
 export interface DayStat {
@@ -39,11 +40,13 @@ export default function Calendar({ selected, onSelect, mode, onModeChange, stats
           const s = stats.get(key)
           const d = fromKey(key)
           const outside = mode === 'month' && d.getMonth() !== month
-          const cls = ['cal-day', outside && 'outside', key === selected && 'selected', key === today && 'today']
+          const holiday = holidayName(key)
+          const dayColor = holiday || d.getDay() === 0 ? 'red' : d.getDay() === 6 ? 'blue' : ''
+          const cls = ['cal-day', outside && 'outside', key === selected && 'selected', key === today && 'today', dayColor]
             .filter(Boolean)
             .join(' ')
           return (
-            <button key={key} className={cls} onClick={() => onSelect(key)} aria-label={key}>
+            <button key={key} className={cls} onClick={() => onSelect(key)} aria-label={holiday ? `${key} ${holiday}` : key} title={holiday}>
               <span className={`mark ${s?.total ? (s.left ? 'has-left' : 'all-done') : ''}`}>
                 {s?.total ? (s.left ? s.left : '✓') : ''}
               </span>
