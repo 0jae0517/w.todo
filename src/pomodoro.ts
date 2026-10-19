@@ -1,0 +1,168 @@
+import { useSyncExternalStore } from 'react'
+import { todayKey } from './date'
+import { getState, updateTodo } from './store'
+
+/**
+ * Pomodoro timer kept outside React so it keeps running (and finishes phases)
+ * whichever tab is open. Uses an absolute end time, so reloads and background
+ * throttling don't drift it.
+ */
+
+export type Phase = 'focus' | 'short' | 'long'
+
+export interface Settings {
+  focus: number
+  short: number
+  long: number
+  longEvery: number
+}
+
+export interface TimerState {
+  phase: Phase
+  /** epoch ms when the running phase ends; null when paused/idle */
+  endsAt: number | null
+  /** ms left while paused */
+  remaining: number
+  /** focus sessions finished in the current cycle */
+  round: number
+  todoId: string | null
+  settings: Settings
+  /** finished focus sessions per day */
+  history: Record<string, number>
+}
+
+const KEY = 'todo-app:pomodoro'
+const DEFAULTS: Settings = { focus: 25, short: 5, long: 15, longEvery: 4 }
+
+export const PHASE_LABEL: Record<Phase, string> = { focus: '집중', short: '짧은 휴식', long: '긴 휴식' }
+
+export const phaseLength = (s: Settings, p: Phase) => s[p] * 60_000
+
+function load(): TimerState {
+  const base: TimerState = { phase: 'focus', endsAt: null, remaining: phaseLength(DEFAULTS, 'focus'), round: 0, todoId: null, settings: DEFAULTS, history: {} }
+  try {
+    const raw = localStorage.getItem(KEY)
+    if (raw) return { ...base, ...JSON.parse(raw) }
+  } catch {
+    // ignore
+  }
+  return base
+}
+
+let state = load()
+const listeners = new Set<() => void>()
+
+function set(patch: Partial<TimerState>) {
+  state = { ...state, ...patch }
+  try {
+    localStorage.setItem(KEY, JSON.stringify(state))
+  } catch {
+    // ignore
+  }
+  listeners.forEach((l) => l())
+}
+
+export const useTimer = () =>
+  useSyncExternalStore(
+    (l) => {
+      listeners.add(l)
+      return () => listeners.delete(l)
+    },
+    () => state,
+  )
+
+export const timeLeft = (s: TimerState, now = Date.now()) => (s.endsAt ? Math.max(0, s.endsAt - now) : s.remaining)
+
+export function start() {
+  if (state.endsAt) return
+  if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission()
+  set({ endsAt: Date.now() + state.remaining })
+}
+
+export function pause() {
+  if (!state.endsAt) return
+  set({ remaining: timeLeft(state), endsAt: null })
+}
+
+function goTo(phase: Phase, round = state.round) {
+  set({ phase, round, endsAt: null, remaining: phaseLength(state.settings, phase) })
+}
+
+export const reset = () => goTo(state.phase)
+
+/** Ends the current phase early without counting it. */
+export function skip() {
+  if (state.phase === 'focus') goTo(state.round + 1 >= state.settings.longEvery ? 'long' : 'short', state.round + 1)
+  else goTo('focus', state.phase === 'long' ? 0 : state.round)
+}
+
+export function setTodo(todoId: string | null) {
+  set({ todoId })
+}
+
+/** Starts a fresh focus session for a todo (from the todo's action sheet). */
+export function focusOn(todoId: string) {
+  set({ todoId, phase: 'focus', endsAt: null, remaining: phaseLength(state.settings, 'focus') })
+  start()
+}
+
+export function formatDuration(seconds: number) {
+  const m = Math.round(seconds / 60)
+  const h = Math.floor(m / 60)
+  return h ? `${h}시간${m % 60 ? ` ${m % 60}분` : ''}` : `${m}분`
+}
+
+export function setSettings(patch: Partial<Settings>) {
+  const settings = { ...state.settings, ...patch }
+  set({ settings })
+  if (!state.endsAt) set({ remaining: phaseLength(settings, state.phase) })
+}
+
+function finish() {
+  const wasFocus = state.phase === 'focus'
+  if (wasFocus) {
+    const day = todayKey()
+    set({ history: { ...state.history, [day]: (state.history[day] ?? 0) + 1 } })
+    const todo = state.todoId ? getState().todos.find((t) => t.id === state.todoId) : undefined
+    if (todo)
+      updateTodo(todo.id, {
+        pomodoros: (todo.pomodoros ?? 0) + 1,
+        focus_seconds: (todo.focus_seconds ?? 0) + state.settings.focus * 60,
+      })
+  }
+  skip()
+  notify(wasFocus ? '집중 시간이 끝났어요. 잠깐 쉬어요!' : '휴식이 끝났어요. 다시 집중해 볼까요?')
+}
+
+function notify(body: string) {
+  beep()
+  try {
+    if ('Notification' in window && Notification.permission === 'granted') new Notification('뽀모도로', { body, icon: '/icon-192.png' })
+  } catch {
+    // some mobile browsers only allow notifications from a service worker
+  }
+}
+
+function beep() {
+  try {
+    const ctx = new AudioContext()
+    for (let i = 0; i < 3; i++) {
+      const o = ctx.createOscillator()
+      const g = ctx.createGain()
+      o.frequency.value = 880
+      g.gain.setValueAtTime(0.2, ctx.currentTime + i * 0.3)
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.3 + 0.25)
+      o.connect(g).connect(ctx.destination)
+      o.start(ctx.currentTime + i * 0.3)
+      o.stop(ctx.currentTime + i * 0.3 + 0.25)
+    }
+  } catch {
+    // audio not available
+  }
+}
+
+export function startTimerLoop() {
+  setInterval(() => {
+    if (state.endsAt && Date.now() >= state.endsAt) finish()
+  }, 500)
+}
