@@ -146,3 +146,24 @@ export async function signOut() {
 }
 
 export const currentUserId = () => state.session?.user.id ?? null
+
+export async function signInWithPassword(email: string, password: string) {
+  const { error } = await supabase!.auth.signInWithPassword({ email, password })
+  if (error) throw new Error(error.message === 'Invalid login credentials' ? '이메일이나 비밀번호가 맞지 않아요' : error.message)
+}
+
+/** Returns true when the account still needs its email confirmed before signing in. */
+export async function signUp(email: string, password: string) {
+  const { data, error } = await supabase!.auth.signUp({
+    email,
+    password,
+    options: { emailRedirectTo: location.origin + location.pathname },
+  })
+  if (error) throw new Error(error.message)
+  return !data.session
+}
+
+export async function setPassword(password: string) {
+  const { error } = await supabase!.auth.updateUser({ password })
+  if (error) throw new Error(error.message)
+}
