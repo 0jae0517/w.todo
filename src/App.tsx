@@ -48,7 +48,7 @@ export default function App() {
         <h1>{TITLES[tab]}</h1>
         <div className="top-actions">
           {tab === 'todos' && (
-            <button className="icon-btn" onClick={() => setPanel({ kind: 'categories' })} aria-label="분류 추가" title="분류 추가">
+            <button className="icon-btn" onClick={() => setPanel({ kind: 'categories' })} aria-label="카테고리 추가" title="카테고리 추가">
               <PlusIcon />
             </button>
           )}

@@ -177,7 +177,7 @@ function Records({ todos, categories }: { todos: Todo[]; categories: Category[] 
 
       {r.perCat.length > 0 && (
         <>
-          <h3 className="sub-title">분류별</h3>
+          <h3 className="sub-title">카테고리별</h3>
           <ul className="rows">
             {r.perCat.map(({ cat, done, total, focus }) => (
               <li key={cat.id}>

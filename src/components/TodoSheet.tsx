@@ -74,7 +74,7 @@ export default function TodoSheet({ todo, categories, reactions, onClose, onFocu
         </label>
       </div>
       <label className="field">
-        <span>분류</span>
+        <span>카테고리</span>
         <select value={todo.category_id} onChange={(e) => updateTodo(todo.id, { category_id: e.target.value })}>
           {categories.map((c) => (
             <option key={c.id} value={c.id}>{c.name}</option>

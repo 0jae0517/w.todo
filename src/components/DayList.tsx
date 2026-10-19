@@ -17,7 +17,7 @@ interface Props {
   onReact?: (todoId: string, emoji: string | null) => void
 }
 
-const ORPHAN: Category = { id: '', name: '분류 없음', color: '#8a8f98', private: false, position: 0, deleted: false, updated_at: '' }
+const ORPHAN: Category = { id: '', name: '카테고리 없음', color: '#8a8f98', private: false, position: 0, deleted: false, updated_at: '' }
 
 export default function DayList({ date, categories, todos, reactions, myId, onOpenTodo, onReact }: Props) {
   const [adding, setAdding] = useState<string | null>(null)
@@ -31,7 +31,7 @@ export default function DayList({ date, categories, todos, reactions, myId, onOp
   if (!groups.length) {
     return (
       <p className="empty">
-        {editable ? '분류를 먼저 만들어 주세요. 오른쪽 위 + 버튼에서 추가할 수 있어요.' : '이 날은 공개된 할 일이 없어요.'}
+        {editable ? '카테고리를 먼저 만들어 주세요. 오른쪽 위 + 버튼에서 추가할 수 있어요.' : '이 날은 공개된 할 일이 없어요.'}
       </p>
     )
   }

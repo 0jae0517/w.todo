@@ -12,7 +12,7 @@ export default function CategorySheet({ categories, onClose }: { categories: Cat
   }
 
   return (
-    <Sheet title="분류 관리" onClose={onClose}>
+    <Sheet title="카테고리 관리" onClose={onClose}>
       <p className="sheet-sub">👥 팔로워에게 공개 · 🔒 나만 보기</p>
       <ul className="cat-list">
         {categories.map((c, i) => (
@@ -43,7 +43,7 @@ export default function CategorySheet({ categories, onClose }: { categories: Cat
               <button className="icon-btn" disabled={i === categories.length - 1} onClick={() => moveCategory(c.id, 1)} aria-label="아래로">↓</button>
               <button
                 className="icon-btn"
-                onClick={() => confirm(`'${c.name}' 분류와 그 안의 할 일을 모두 삭제할까요?`) && deleteCategory(c.id)}
+                onClick={() => confirm(`'${c.name}' 카테고리와 그 안의 할 일을 모두 삭제할까요?`) && deleteCategory(c.id)}
                 aria-label="삭제"
               >
                 🗑
@@ -71,7 +71,7 @@ export default function CategorySheet({ categories, onClose }: { categories: Cat
       <div className="cat-add">
         <input
           autoFocus
-          placeholder="새 분류 이름 (예: 운동, 공부)"
+          placeholder="새 카테고리 이름 (예: 운동, 공부)"
           value={name}
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && !e.nativeEvent.isComposing && add()}

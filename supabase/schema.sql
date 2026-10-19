@@ -113,7 +113,7 @@ language sql stable security definer set search_path = public as $$
   select exists (select 1 from categories where user_id = owner and id = cat and not private and not deleted)
 $$;
 
--- 팔로워는 "나만 보기"가 아닌 분류와 그 안의 할 일을 볼 수 있음
+-- 팔로워는 "나만 보기"가 아닌 카테고리와 그 안의 할 일을 볼 수 있음
 drop policy if exists "followers read categories" on public.categories;
 create policy "followers read categories" on public.categories for select to authenticated
   using (not private and not deleted and public.is_following(user_id));
