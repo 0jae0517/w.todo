@@ -1,6 +1,6 @@
 {
-  "name": "할 일",
-  "short_name": "할 일",
+  "name": "w.todo",
+  "short_name": "w.todo",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

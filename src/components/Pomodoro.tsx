@@ -30,7 +30,7 @@ export default function Pomodoro({ todos }: { todos: Todo[] }) {
   const current = todos.find((x) => x.id === t.todoId)
 
   useEffect(() => {
-    document.title = running ? `${fmt(left)} ${PHASE_LABEL[t.phase]}` : '할 일'
+    document.title = running ? `${fmt(left)} ${PHASE_LABEL[t.phase]}` : 'w.todo'
   })
 
   return (
