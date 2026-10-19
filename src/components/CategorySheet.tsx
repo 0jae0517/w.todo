@@ -70,6 +70,7 @@ export default function CategorySheet({ categories, onClose }: { categories: Cat
       </ul>
       <div className="cat-add">
         <input
+          autoFocus
           placeholder="새 분류 이름 (예: 운동, 공부)"
           value={name}
           onChange={(e) => setName(e.target.value)}

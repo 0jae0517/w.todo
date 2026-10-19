@@ -31,7 +31,7 @@ export default function DayList({ date, categories, todos, reactions, myId, onOp
   if (!groups.length) {
     return (
       <p className="empty">
-        {editable ? '분류를 먼저 만들어 주세요. 오른쪽 위 분류 버튼에서 추가할 수 있어요.' : '이 날은 공개된 할 일이 없어요.'}
+        {editable ? '분류를 먼저 만들어 주세요. 오른쪽 위 + 버튼에서 추가할 수 있어요.' : '이 날은 공개된 할 일이 없어요.'}
       </p>
     )
   }

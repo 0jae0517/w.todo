@@ -4,7 +4,7 @@ import Calendar, { type DayStat } from './components/Calendar'
 import CategorySheet from './components/CategorySheet'
 import DayList from './components/DayList'
 import Friends from './components/Friends'
-import { CheckIcon, CloudIcon, FriendsIcon, PersonIcon, TagIcon, TimerIcon } from './components/Icons'
+import { CheckIcon, CloudIcon, FriendsIcon, PersonIcon, PlusIcon, TimerIcon } from './components/Icons'
 import Me from './components/Me'
 import Pomodoro from './components/Pomodoro'
 import TodoSheet from './components/TodoSheet'
@@ -48,8 +48,8 @@ export default function App() {
         <h1>{TITLES[tab]}</h1>
         <div className="top-actions">
           {tab === 'todos' && (
-            <button className="icon-btn" onClick={() => setPanel({ kind: 'categories' })} aria-label="분류 관리">
-              <TagIcon />
+            <button className="icon-btn" onClick={() => setPanel({ kind: 'categories' })} aria-label="분류 추가" title="분류 추가">
+              <PlusIcon />
             </button>
           )}
           <button className="icon-btn sync-btn" onClick={() => setTab('me')} aria-label={STATUS_LABEL[status]} title={STATUS_LABEL[status]}>
