@@ -448,3 +448,29 @@ input, select {
 .pick-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; max-height: 220px; overflow: auto; }
 .pick-list label { display: flex; align-items: center; gap: 10px; padding: 6px 0; font-size: 14px; cursor: pointer; }
 .pick-list input { width: 18px; height: 18px; accent-color: var(--accent); }
+
+.group-head { touch-action: manipulation; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.group.dragging { opacity: 0.92; }
+.group.dragging .group-head { box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18); transform: scale(1.03); }
+
+/* time wheel */
+.time-btn { padding: 9px 14px; border-radius: 10px; background: var(--surface); font-size: 14px; font-weight: 600; }
+.wheel-box { margin: -6px 0 16px; padding: 10px; border-radius: 14px; background: var(--surface); }
+.wheels { position: relative; display: flex; justify-content: center; gap: 4px; height: 200px; }
+.wheel-band { position: absolute; left: 0; right: 0; top: 80px; height: 40px; border-radius: 10px; background: var(--bg); pointer-events: none; }
+.wheel {
+  position: relative;
+  width: 80px;
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  scroll-padding-top: 80px;
+  padding: 80px 0;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(transparent, #000 30%, #000 70%, transparent);
+  mask-image: linear-gradient(transparent, #000 30%, #000 70%, transparent);
+}
+.wheel::-webkit-scrollbar { display: none; }
+.wheel-item { height: 40px; line-height: 40px; text-align: center; scroll-snap-align: start; font-size: 18px; color: var(--muted); cursor: pointer; font-variant-numeric: tabular-nums; }
+.wheel-item.on { color: var(--text); font-weight: 700; }
+.wheel-box .actions { margin: 10px 0 0; }
+.wheel-box .actions .primary { flex: 1; }

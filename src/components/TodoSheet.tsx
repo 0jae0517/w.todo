@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { addDays, dayLabel, todayKey } from '../date'
+import { addDays, dayLabel, timeLabel, todayKey } from '../date'
 import { deleteTodo, updateTodo } from '../store'
 import { focusOn, formatDuration } from '../pomodoro'
 import type { Reaction } from '../social'
 import type { Category, Todo } from '../types'
 import Sheet from './Sheet'
+import TimeWheel from './TimeWheel'
 
 interface Props {
   todo: Todo
@@ -16,6 +17,7 @@ interface Props {
 
 export default function TodoSheet({ todo, categories, reactions, onClose, onFocus }: Props) {
   const [title, setTitle] = useState(todo.title)
+  const [pickingTime, setPickingTime] = useState(false)
   const saveTitle = () => {
     const t = title.trim()
     if (t && t !== todo.title) updateTodo(todo.id, { title: t })
@@ -75,15 +77,23 @@ export default function TodoSheet({ todo, categories, reactions, onClose, onFocu
       </div>
       <div className="field">
         <span>시간</span>
-        <div className="time-pick">
-          <input type="time" value={todo.time ?? ''} onChange={(e) => updateTodo(todo.id, { time: e.target.value || null })} />
-          {todo.time && (
-            <button className="link" onClick={() => updateTodo(todo.id, { time: null })}>
-              없음
-            </button>
-          )}
-        </div>
+        <button className="time-btn" onClick={() => setPickingTime(!pickingTime)}>
+          {todo.time ? timeLabel(todo.time) : '정하지 않음'}
+        </button>
       </div>
+      {pickingTime && (
+        <TimeWheel
+          value={todo.time}
+          onDone={(time) => {
+            updateTodo(todo.id, { time })
+            setPickingTime(false)
+          }}
+          onClear={() => {
+            updateTodo(todo.id, { time: null })
+            setPickingTime(false)
+          }}
+        />
+      )}
       <label className="field">
         <span>카테고리</span>
         <select value={todo.category_id} onChange={(e) => updateTodo(todo.id, { category_id: e.target.value })}>

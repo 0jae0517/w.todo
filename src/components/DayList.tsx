@@ -2,9 +2,10 @@ import { useState } from 'react'
 import { timeLabel } from '../date'
 import { formatDuration } from '../pomodoro'
 import type { Reaction } from '../social'
-import { addTodo, updateTodo } from '../store'
+import { addTodo, reorderCategories, updateTodo } from '../store'
 import type { Category, Todo } from '../types'
 import ReactionBar from './ReactionBar'
+import { useDragSort } from './useDragSort'
 
 interface Props {
   date: string
@@ -28,6 +29,8 @@ export default function DayList({ date, categories, todos, reactions, myId, onOp
   const groups = (orphans.length ? [...categories, ORPHAN] : categories).filter(
     (c) => editable || todos.some((t) => t.category_id === c.id),
   )
+  const sortable = editable ? categories.map((c) => c.id) : []
+  const dnd = useDragSort(sortable, reorderCategories)
 
   if (!groups.length) {
     return (
@@ -43,12 +46,19 @@ export default function DayList({ date, categories, todos, reactions, myId, onOp
         const items = (cat === ORPHAN ? orphans : todos.filter((t) => t.category_id === cat.id)).sort(byTime)
         const c = { '--c': cat.color } as React.CSSProperties
         return (
-          <section key={cat.id || 'orphan'} className="group">
+          <section
+            key={cat.id || 'orphan'}
+            ref={editable && cat !== ORPHAN ? dnd.register(cat.id) : undefined}
+            className={`group ${dnd.dragging === cat.id ? 'dragging' : ''}`}
+            style={dnd.styleFor(cat.id)}
+          >
             <button
               className="group-head"
               style={c}
               disabled={!editable || cat === ORPHAN}
-              onClick={() => setAdding(adding === cat.id ? null : cat.id)}
+              onPointerDown={editable && cat !== ORPHAN ? dnd.start(cat.id) : undefined}
+              onContextMenu={(e) => editable && e.preventDefault()}
+              onClick={() => !dnd.justDragged.current && setAdding(adding === cat.id ? null : cat.id)}
             >
               <span className="group-name">{cat.name}</span>
               {cat.visibility === 'private' && <span className="lock" title="나만 보기">🔒</span>}

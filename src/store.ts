@@ -189,6 +189,17 @@ export function moveCategory(id: string, dir: -1 | 1) {
   commit(true)
 }
 
+/** Saves a new category order (ids in display order). */
+export function reorderCategories(ids: string[]) {
+  const t = now()
+  ids.forEach((id, i) => {
+    const cur = db.categories[id]
+    const position = (i + 1) * 1024
+    if (cur && cur.position !== position) put('categories', { ...cur, position, updated_at: t })
+  })
+  commit(true)
+}
+
 // ---- sync support ----
 
 export function pendingChanges() {
