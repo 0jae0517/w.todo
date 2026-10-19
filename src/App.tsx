@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react'
-import AccountSheet, { STATUS_LABEL } from './components/AccountSheet'
+import { STATUS_LABEL } from './components/Account'
 import Calendar, { type DayStat } from './components/Calendar'
 import CategorySheet from './components/CategorySheet'
 import DayList from './components/DayList'
 import Friends from './components/Friends'
-import { CheckIcon, CloudIcon, FriendsIcon, TagIcon, TimerIcon } from './components/Icons'
+import { CheckIcon, CloudIcon, FriendsIcon, PersonIcon, TagIcon, TimerIcon } from './components/Icons'
+import Me from './components/Me'
 import Pomodoro from './components/Pomodoro'
 import TodoSheet from './components/TodoSheet'
 import { dayLabel, todayKey } from './date'
@@ -12,17 +13,17 @@ import { useMyReactions } from './social'
 import { useStore } from './store'
 import { currentUserId, useSync } from './sync'
 
-type Tab = 'todos' | 'timer' | 'friends'
-type Panel = { kind: 'todo'; id: string } | { kind: 'categories' } | { kind: 'account' } | null
+type Tab = 'todos' | 'timer' | 'friends' | 'me'
+type Panel = { kind: 'todo'; id: string } | { kind: 'categories' } | null
 
-const TITLES: Record<Tab, string> = { todos: '할 일', timer: '뽀모도로', friends: '친구' }
+const TITLES: Record<Tab, string> = { todos: 'w.todo', timer: '뽀모도로', friends: '친구', me: '내 정보' }
 
 export default function App() {
   const { categories, todos } = useStore()
   const { status } = useSync()
   const [tab, setTab] = useState<Tab>('todos')
   const [selected, setSelected] = useState(todayKey)
-  const [mode, setMode] = useState<'week' | 'month'>(() => (localStorage.getItem('cal-mode') === 'month' ? 'month' : 'week'))
+  const [mode, setMode] = useState<'week' | 'month'>('month')
   const [panel, setPanel] = useState<Panel>(null)
 
   const stats = useMemo(() => {
@@ -50,7 +51,7 @@ export default function App() {
               <TagIcon />
             </button>
           )}
-          <button className="icon-btn sync-btn" onClick={() => setPanel({ kind: 'account' })} aria-label={STATUS_LABEL[status]} title={STATUS_LABEL[status]}>
+          <button className="icon-btn sync-btn" onClick={() => setTab('me')} aria-label={STATUS_LABEL[status]} title={STATUS_LABEL[status]}>
             <CloudIcon />
             <span className={`dot s-${status}`} />
           </button>
@@ -63,10 +64,7 @@ export default function App() {
             selected={selected}
             onSelect={setSelected}
             mode={mode}
-            onModeChange={(m) => {
-              setMode(m)
-              localStorage.setItem('cal-mode', m)
-            }}
+            onModeChange={setMode}
             stats={stats}
           />
           <main>
@@ -83,7 +81,8 @@ export default function App() {
         </>
       )}
       {tab === 'timer' && <Pomodoro todos={todos} />}
-      {tab === 'friends' && <Friends onLogin={() => setPanel({ kind: 'account' })} />}
+      {tab === 'friends' && <Friends onLogin={() => setTab('me')} />}
+      {tab === 'me' && <Me todos={todos} categories={categories} />}
 
       <nav className="tabbar">
         <button className={tab === 'todos' ? 'on' : ''} onClick={() => setTab('todos')}>
@@ -94,6 +93,9 @@ export default function App() {
         </button>
         <button className={tab === 'friends' ? 'on' : ''} onClick={() => setTab('friends')}>
           <FriendsIcon />친구
+        </button>
+        <button className={tab === 'me' ? 'on' : ''} onClick={() => setTab('me')}>
+          <PersonIcon />내 정보
         </button>
       </nav>
 
@@ -111,7 +113,6 @@ export default function App() {
         />
       )}
       {panel?.kind === 'categories' && <CategorySheet categories={categories} onClose={() => setPanel(null)} />}
-      {panel?.kind === 'account' && <AccountSheet onClose={() => setPanel(null)} />}
     </div>
   )
 }

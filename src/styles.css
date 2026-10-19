@@ -402,3 +402,28 @@ input, select {
 .social-btn:disabled { opacity: 0.6; }
 .or { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 12px; margin: 16px 0 4px; }
 .or::before, .or::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+
+/* me */
+.me { display: flex; flex-direction: column; gap: 14px; padding-top: 6px; }
+.card { background: var(--surface); border-radius: 16px; padding: 16px; }
+.card .field select, .card input, .card .search { background: var(--bg); }
+.card .actions > button { background: var(--bg); }
+.section-title { font-size: 16px; margin: 0 0 12px; }
+.sub-title { font-size: 13px; color: var(--muted); margin: 18px 0 6px; font-weight: 600; }
+.profile { display: flex; align-items: center; gap: 12px; }
+.avatar.big { width: 52px; height: 52px; font-size: 20px; background: var(--bg); }
+.profile-text { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.profile-text strong { font-size: 17px; }
+.profile-counts { font-size: 13px; color: var(--muted); }
+.profile-counts b { color: var(--text); }
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.tile { background: var(--bg); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 4px; }
+.tile span { font-size: 12px; color: var(--muted); }
+.tile strong { font-size: 20px; }
+.tile small { font-size: 12px; color: var(--muted); }
+.rows { list-style: none; margin: 0; padding: 0; }
+.rows li { display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.rows li:last-child { border-bottom: 0; }
+.muted { color: var(--muted); font-size: 13px; }
+.ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tabbar button { max-width: 140px; }

@@ -37,7 +37,7 @@ export default function Friends({ onLogin }: { onLogin: () => void }) {
   return <FriendHome me={profile} onOpen={setViewing} onEditProfile={reload} />
 }
 
-function ProfileForm({ onSaved, initial }: { onSaved: () => void; initial?: Profile }) {
+export function ProfileForm({ onSaved, initial }: { onSaved: () => void; initial?: Profile }) {
   const [username, setUsername] = useState(initial?.username ?? '')
   const [name, setName] = useState(initial?.name ?? '')
   const [err, setErr] = useState<string | null>(null)

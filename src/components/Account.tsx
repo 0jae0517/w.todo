@@ -1,7 +1,5 @@
 import { useState } from 'react'
-import { supabase } from '../supabase'
-import { sendLoginLink, setPassword, signInWithPassword, signInWithProvider, signOut, signUp, syncNow, useSync, type SyncStatus } from '../sync'
-import Sheet from './Sheet'
+import { sendLoginLink, setPassword, signInWithPassword, signInWithProvider, signUp, type SyncStatus } from '../sync'
 
 export const STATUS_LABEL: Record<SyncStatus, string> = {
   off: '이 기기에만 저장 중',
@@ -12,38 +10,9 @@ export const STATUS_LABEL: Record<SyncStatus, string> = {
   error: '동기화 오류',
 }
 
-export default function AccountSheet({ onClose }: { onClose: () => void }) {
-  const { status, session, error } = useSync()
-
-  if (!supabase) {
-    return (
-      <Sheet title="동기화" onClose={onClose}>
-        <p className="sheet-sub">
-          아직 동기화 서버가 연결되지 않아 이 기기에만 저장하고 있어요. 서버를 연결하면 지금까지 쓴 할 일도 그대로 올라가요.
-        </p>
-      </Sheet>
-    )
-  }
-
-  if (!session) return <LoginForm onClose={onClose} />
-
-  return (
-    <Sheet title="동기화" onClose={onClose}>
-      <p className="sheet-sub">{session.user.email}</p>
-      <p className={`status-line s-${status}`}>{STATUS_LABEL[status]}</p>
-      {error && status === 'error' && <p className="error">{error}</p>}
-      <div className="actions">
-        <button onClick={() => syncNow()}>지금 동기화</button>
-        <button onClick={() => signOut()}>로그아웃</button>
-      </div>
-      <PasswordForm />
-    </Sheet>
-  )
-}
-
 const errText = (e: unknown) => (e instanceof Error ? e.message : String(e))
 
-function LoginForm({ onClose }: { onClose: () => void }) {
+export function LoginPanel() {
   const [email, setEmail] = useState('')
   const [password, setPw] = useState('')
   const [busy, setBusy] = useState(false)
@@ -64,7 +33,7 @@ function LoginForm({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <Sheet title="로그인" onClose={onClose}>
+    <div>
       <div className="social">
         <button className="social-btn google" disabled={busy} onClick={() => run(async () => (await signInWithProvider('google'), null))}>
           <GoogleLogo /> Google로 계속하기
@@ -118,11 +87,11 @@ function LoginForm({ onClose }: { onClose: () => void }) {
         {msg && <p className="sheet-sub">{msg}</p>}
         {err && <p className="error">{err}</p>}
       </form>
-    </Sheet>
+    </div>
   )
 }
 
-function PasswordForm() {
+export function PasswordForm() {
   const [open, setOpen] = useState(false)
   const [pw, setPw] = useState('')
   const [msg, setMsg] = useState<string | null>(null)

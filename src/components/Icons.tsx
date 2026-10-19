@@ -15,3 +15,6 @@ export const TagIcon = () => (
 export const CloudIcon = () => (
   <svg {...base}><path d="M7 18h10.5a4 4 0 00.6-7.95A6 6 0 006.3 9.1 4.5 4.5 0 007 18z" /></svg>
 )
+export const PersonIcon = () => (
+  <svg {...base}><circle cx="12" cy="8" r="4" /><path d="M4 21c.8-4.2 4-6.5 8-6.5s7.2 2.3 8 6.5" /></svg>
+)
