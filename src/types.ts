@@ -28,10 +28,43 @@ export interface Todo {
   pomodoros: number
   /** total focused time recorded from finished Pomodoro sessions */
   focus_seconds: number
+  /** the routine this todo was created from, if it repeats */
+  routine_id: string | null
   position: number
   deleted: boolean
   updated_at: string
 }
 
-export type Kind = 'todos' | 'categories'
-export type Row<K extends Kind> = K extends 'todos' ? Todo : Category
+/** A repeating todo: one todo is created per matching day. */
+export interface Routine {
+  id: string
+  title: string
+  category_id: string
+  time: string | null
+  /** weekdays it repeats on, 0 = Sunday */
+  days: number[]
+  /** first day (YYYY-MM-DD) */
+  start_date: string
+  deleted: boolean
+  updated_at: string
+}
+
+/** One finished Pomodoro focus session. */
+export interface FocusSession {
+  id: string
+  /** ISO time the session started */
+  started_at: string
+  seconds: number
+  todo_id: string | null
+  deleted: boolean
+  updated_at: string
+}
+
+export type Kind = 'todos' | 'categories' | 'routines' | 'sessions'
+export type Row<K extends Kind> = K extends 'todos'
+  ? Todo
+  : K extends 'categories'
+    ? Category
+    : K extends 'routines'
+      ? Routine
+      : FocusSession

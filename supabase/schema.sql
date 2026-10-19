@@ -194,3 +194,64 @@ do $$ begin
   alter publication supabase_realtime add table public.reactions;
 exception when duplicate_object then null;
 end $$;
+
+-- ============================================================
+-- 반복 할 일 / 뽀모도로 기록
+-- ============================================================
+create table if not exists public.routines (
+  user_id     uuid not null default auth.uid() references auth.users on delete cascade,
+  id          text not null,
+  title       text not null,
+  category_id text not null,
+  time        text check (time ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$'),
+  days        smallint[] not null,          -- 반복하는 요일, 0 = 일요일
+  start_date  date not null,
+  deleted     boolean not null default false,
+  updated_at  timestamptz not null,
+  synced_at   timestamptz not null default now(),
+  primary key (user_id, id)
+);
+
+-- 뽀모도로 집중 한 번이 끝날 때마다 한 줄 (요일·시간대별 집중 패턴용)
+create table if not exists public.sessions (
+  user_id    uuid not null default auth.uid() references auth.users on delete cascade,
+  id         text not null,
+  started_at timestamptz not null,
+  seconds    integer not null check (seconds > 0),
+  todo_id    text,
+  deleted    boolean not null default false,
+  updated_at timestamptz not null,
+  synced_at  timestamptz not null default now(),
+  primary key (user_id, id)
+);
+
+alter table public.todos add column if not exists routine_id text;
+
+create index if not exists routines_synced_idx on public.routines (user_id, synced_at);
+create index if not exists sessions_synced_idx on public.sessions (user_id, synced_at);
+
+drop trigger if exists routines_touch on public.routines;
+create trigger routines_touch before insert or update on public.routines
+  for each row execute function public.touch_synced_at();
+drop trigger if exists sessions_touch on public.sessions;
+create trigger sessions_touch before insert or update on public.sessions
+  for each row execute function public.touch_synced_at();
+
+-- 본인만 읽고 쓸 수 있음 (팔로워에게는 보이지 않음)
+alter table public.routines enable row level security;
+alter table public.sessions enable row level security;
+drop policy if exists "own routines" on public.routines;
+create policy "own routines" on public.routines for all
+  using (user_id = auth.uid()) with check (user_id = auth.uid());
+drop policy if exists "own sessions" on public.sessions;
+create policy "own sessions" on public.sessions for all
+  using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+do $$ begin
+  alter publication supabase_realtime add table public.routines;
+exception when duplicate_object then null;
+end $$;
+do $$ begin
+  alter publication supabase_realtime add table public.sessions;
+exception when duplicate_object then null;
+end $$;

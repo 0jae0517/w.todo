@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import { todayKey } from './date'
-import { getState, updateTodo } from './store'
+import { addSession, getState, updateTodo } from './store'
 
 /**
  * Pomodoro timer kept outside React so it keeps running (and finishes phases)
@@ -129,6 +129,8 @@ function finish() {
     const day = todayKey()
     set({ history: { ...state.history, [day]: (state.history[day] ?? 0) + 1 } })
     const todo = state.todoId ? getState().todos.find((t) => t.id === state.todoId) : undefined
+    const seconds = state.settings.focus * 60
+    addSession(new Date(Date.now() - seconds * 1000).toISOString(), seconds, todo?.id ?? null)
     if (todo)
       updateTodo(todo.id, {
         pomodoros: (todo.pomodoros ?? 0) + 1,

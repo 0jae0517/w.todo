@@ -5,7 +5,11 @@ import { listFollowers, listFollowing, useMyProfile } from '../social'
 import { supabase } from '../supabase'
 import { signOut, syncNow, useSync } from '../sync'
 import type { Category, Todo } from '../types'
+import { useStore } from '../store'
 import { LoginPanel, PasswordForm, STATUS_LABEL } from './Account'
+import FocusPattern from './FocusPattern'
+import Heatmap from './Heatmap'
+import Recap from './Recap'
 import { ProfileForm } from './Friends'
 
 export default function Me({ todos, categories }: { todos: Todo[]; categories: Category[] }) {
@@ -24,7 +28,12 @@ export default function Me({ todos, categories }: { todos: Todo[]; categories: C
           <LoginPanel />
         </section>
       )}
+      <Recap todos={todos} categories={categories} />
       <Records todos={todos} categories={categories} />
+      <section className="card">
+        <h2 className="section-title">집중 패턴</h2>
+        <FocusPattern sessions={useStore().sessions} />
+      </section>
       {session && <AccountCard />}
     </div>
   )
@@ -163,6 +172,9 @@ function Records({ todos, categories }: { todos: Todo[]; categories: Category[] 
           <strong>{r.streak}일</strong>
         </div>
       </div>
+
+      <h3 className="sub-title">잔디</h3>
+      <Heatmap todos={todos} categories={categories} />
 
       <h3 className="sub-title">최근 7일</h3>
       <ul className="rows">

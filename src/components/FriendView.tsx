@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
-import { dayLabel, monthGrid, todayKey } from '../date'
+import { addDays, dayLabel, monthGrid, todayKey } from '../date'
 import { holidayName } from '../holidays'
 import { byTodo, followingIds, follow, friendData, react, reactionsFor, unfollow, unreact, type FollowState, type Profile, type Reaction } from '../social'
 import { currentUserId } from '../sync'
 import type { Category, Todo } from '../types'
 import Calendar, { type DayStat } from './Calendar'
 import DayList from './DayList'
+import Heatmap from './Heatmap'
 
 export const FOLLOW_LABEL = { following: '팔로잉', requested: '요청됨', none: '팔로우' }
 
@@ -39,6 +40,16 @@ export default function FriendView({ friend, onBack }: { friend: Profile; onBack
       alive = false
     }
   }, [friend.id, from, to, isFollowing])
+
+  // a year of todos for the grass grid
+  const [year, setYear] = useState<Todo[]>([])
+  useEffect(() => {
+    if (!isFollowing) return setYear([])
+    const today = todayKey()
+    friendData(friend.id, addDays(today, -7 * 53), today)
+      .then((d) => setYear(d.todos))
+      .catch(() => {})
+  }, [friend.id, isFollowing])
 
   const dayTodos = data.todos.filter((t) => t.date === selected)
   const doneIds = dayTodos.filter((t) => t.done).map((t) => t.id).join(',')
@@ -119,6 +130,12 @@ export default function FriendView({ friend, onBack }: { friend: Profile; onBack
             myId={myId}
             onReact={onReact}
           />
+          {year.length > 0 && (
+            <section className="card friend-heat">
+              <h3 className="sub-title">최근 1년</h3>
+              <Heatmap todos={year} categories={data.categories} />
+            </section>
+          )}
         </>
       )}
     </div>

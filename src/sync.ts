@@ -2,7 +2,7 @@ import { useSyncExternalStore } from 'react'
 import type { RealtimeChannel, Session } from '@supabase/supabase-js'
 import { supabase } from './supabase'
 import { clearTimer } from './pomodoro'
-import { UNTOUCHED, applyRemote, bindUser, getCursor, hasPending, markPushed, onLocalChange, pendingChanges, resetLocal } from './store'
+import { UNTOUCHED, applyRemote, bindUser, generateRepeats, getCursor, hasPending, markPushed, onLocalChange, pendingChanges, resetLocal } from './store'
 import type { Kind } from './types'
 
 export type SyncStatus = 'off' | 'signed-out' | 'syncing' | 'synced' | 'offline' | 'error'
@@ -28,7 +28,7 @@ export const useSync = () =>
     () => state,
   )
 
-const KINDS: Kind[] = ['categories', 'todos']
+const KINDS: Kind[] = ['categories', 'routines', 'todos', 'sessions']
 const PAGE = 1000
 
 let running = false
@@ -54,6 +54,8 @@ export async function syncNow() {
       await pull(userId)
     } while (again)
     set({ status: 'synced', error: null })
+    // only after a pull, so routines stopped on another device don't come back
+    generateRepeats()
   } catch (e) {
     set({ status: navigator.onLine ? 'error' : 'offline', error: e instanceof Error ? e.message : String(e) })
   } finally {
@@ -119,7 +121,7 @@ function scheduleSync() {
 }
 
 export function startSync() {
-  if (!supabase) return
+  if (!supabase) return generateRepeats()
   supabase.auth.onAuthStateChange((_event, session) => {
     const prev = state.session?.user.id
     set({ session, status: session ? state.status : 'signed-out' })
@@ -130,12 +132,17 @@ export function startSync() {
       syncNow()
     } else if (!session) {
       unlisten()
+      generateRepeats()
     }
   })
   onLocalChange(scheduleSync)
   window.addEventListener('online', () => syncNow())
   window.addEventListener('offline', () => state.session && set({ status: 'offline' }))
-  document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && syncNow())
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return
+    if (state.session) syncNow()
+    else generateRepeats()
+  })
 }
 
 export async function sendLoginLink(email: string) {

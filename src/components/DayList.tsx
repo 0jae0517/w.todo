@@ -80,6 +80,7 @@ export default function DayList({ date, categories, todos, reactions, myId, onOp
                     </button>
                     <span className="todo-title" onClick={() => onOpenTodo?.(t.id)}>
                       {t.time && <span className="todo-time">{timeLabel(t.time)}</span>}
+                      {t.routine_id && <span className="todo-repeat" title="반복">🔁</span>}
                       {t.title}
                       {t.focus_seconds > 0 && <span className="tomato"> 🍅 {formatDuration(t.focus_seconds)}</span>}
                     </span>
