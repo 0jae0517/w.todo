@@ -59,27 +59,55 @@ export async function searchProfiles(q: string) {
 
 // ---- follows ----
 
+export type FollowState = 'following' | 'requested'
+
+/** People I follow or have asked to follow: id -> state */
 export async function followingIds() {
-  const rows = check(await db().from('follows').select('followee_id').eq('follower_id', me()))
-  return new Set((rows ?? []).map((r) => r.followee_id as string))
+  const rows = check(await db().from('follows').select('followee_id, accepted').eq('follower_id', me()))
+  return new Map((rows ?? []).map((r) => [r.followee_id as string, (r.accepted ? 'following' : 'requested') as FollowState]))
 }
 
 export async function listFollowing() {
-  const rows = check(await db().from('follows').select('p:profiles!follows_followee_id_fkey(id, username, name)').eq('follower_id', me()))
+  const rows = check(
+    await db().from('follows').select('p:profiles!follows_followee_id_fkey(id, username, name)').eq('follower_id', me()).eq('accepted', true),
+  )
   return (rows ?? []).map((r) => r.p as unknown as Profile)
 }
 
 export async function listFollowers() {
-  const rows = check(await db().from('follows').select('p:profiles!follows_follower_id_fkey(id, username, name)').eq('followee_id', me()))
+  const rows = check(
+    await db().from('follows').select('p:profiles!follows_follower_id_fkey(id, username, name)').eq('followee_id', me()).eq('accepted', true),
+  )
   return (rows ?? []).map((r) => r.p as unknown as Profile)
 }
 
-export async function follow(id: string) {
-  check(await db().from('follows').insert({ follower_id: me(), followee_id: id }))
+/** Follow requests waiting for my answer */
+export async function listRequests() {
+  const rows = check(
+    await db().from('follows').select('p:profiles!follows_follower_id_fkey(id, username, name)').eq('followee_id', me()).eq('accepted', false),
+  )
+  return (rows ?? []).map((r) => r.p as unknown as Profile)
 }
 
+/** Sends a follow request; it counts once the other person accepts. */
+export async function follow(id: string) {
+  const res = await db().from('follows').insert({ follower_id: me(), followee_id: id })
+  if (res.error?.code === '23505') return // already requested
+  check(res)
+}
+
+/** Unfollows, or cancels a request that hasn't been accepted yet. */
 export async function unfollow(id: string) {
   check(await db().from('follows').delete().eq('follower_id', me()).eq('followee_id', id))
+}
+
+export async function acceptRequest(id: string) {
+  check(await db().from('follows').update({ accepted: true }).eq('follower_id', id).eq('followee_id', me()))
+}
+
+/** Declines a request, or removes someone who already follows me. */
+export async function removeFollower(id: string) {
+  check(await db().from('follows').delete().eq('follower_id', id).eq('followee_id', me()))
 }
 
 // ---- a friend's todos ----

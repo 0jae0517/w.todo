@@ -1,18 +1,22 @@
 import { useEffect, useMemo, useState } from 'react'
 import { dayLabel, monthGrid, todayKey } from '../date'
 import { holidayName } from '../holidays'
-import { byTodo, followingIds, follow, friendData, react, reactionsFor, unfollow, unreact, type Profile, type Reaction } from '../social'
+import { byTodo, followingIds, follow, friendData, react, reactionsFor, unfollow, unreact, type FollowState, type Profile, type Reaction } from '../social'
 import { currentUserId } from '../sync'
 import type { Category, Todo } from '../types'
 import Calendar, { type DayStat } from './Calendar'
 import DayList from './DayList'
+
+export const FOLLOW_LABEL = { following: '팔로잉', requested: '요청됨', none: '팔로우' }
 
 export default function FriendView({ friend, onBack }: { friend: Profile; onBack: () => void }) {
   const [selected, setSelected] = useState(todayKey)
   const [mode, setMode] = useState<'week' | 'month'>('week')
   const [data, setData] = useState<{ categories: Category[]; todos: Todo[] }>({ categories: [], todos: [] })
   const [reactions, setReactions] = useState<Reaction[]>([])
-  const [isFollowing, setIsFollowing] = useState<boolean | null>(null)
+  // undefined while loading, null when not following
+  const [state, setState] = useState<FollowState | null | undefined>(undefined)
+  const isFollowing = state === 'following'
   const [err, setErr] = useState<string | null>(null)
   const myId = currentUserId()
 
@@ -22,7 +26,7 @@ export default function FriendView({ friend, onBack }: { friend: Profile; onBack
   const to = grid[grid.length - 1]
 
   useEffect(() => {
-    followingIds().then((s) => setIsFollowing(s.has(friend.id))).catch(() => {})
+    followingIds().then((m) => setState(m.get(friend.id) ?? null)).catch(() => {})
   }, [friend.id])
 
   useEffect(() => {
@@ -68,9 +72,14 @@ export default function FriendView({ friend, onBack }: { friend: Profile; onBack
 
   const toggleFollow = async () => {
     try {
-      await (isFollowing ? unfollow(friend.id) : follow(friend.id))
-      setIsFollowing(!isFollowing)
-      if (isFollowing) setData({ categories: [], todos: [] })
+      if (state) {
+        await unfollow(friend.id)
+        setState(null)
+        setData({ categories: [], todos: [] })
+      } else {
+        await follow(friend.id)
+        setState('requested')
+      }
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e))
     }
@@ -84,15 +93,17 @@ export default function FriendView({ friend, onBack }: { friend: Profile; onBack
           <strong>{friend.name || friend.username}</strong>
           <span className="handle">@{friend.username}</span>
         </div>
-        {isFollowing !== null && (
-          <button className={isFollowing ? 'follow on' : 'follow'} onClick={toggleFollow}>
-            {isFollowing ? '팔로잉' : '팔로우'}
+        {state !== undefined && (
+          <button className={state ? 'follow on' : 'follow'} onClick={toggleFollow}>
+            {FOLLOW_LABEL[state ?? 'none']}
           </button>
         )}
       </div>
       {err && <p className="error">{err}</p>}
-      {isFollowing === false ? (
-        <p className="empty">팔로우하면 할 일을 보고 감정표현을 남길 수 있어요.</p>
+      {state === 'requested' ? (
+        <p className="empty">팔로우를 요청했어요. 상대가 수락하면 할 일을 볼 수 있어요.</p>
+      ) : state === null ? (
+        <p className="empty">팔로우를 요청하고 상대가 수락하면 할 일을 보고 감정표현을 남길 수 있어요.</p>
       ) : (
         <>
           <Calendar selected={selected} onSelect={setSelected} mode={mode} onModeChange={setMode} stats={stats} />

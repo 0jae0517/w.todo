@@ -28,11 +28,16 @@ export interface State {
 }
 
 const now = () => new Date().toISOString()
+/**
+ * updated_at of the starter category before anyone touches it. It is only
+ * inserted when the account has no such row yet, so signing in on a new device
+ * never overwrites a renamed or hidden default category.
+ */
+export const UNTOUCHED = new Date(0).toISOString()
 const newId = () => crypto.randomUUID()
 
 function initial(): Persisted {
-  const t = now()
-  const def: Category = { id: 'default', name: '할 일', color: PALETTE[0], visibility: 'followers', allowed_ids: [], private: false, position: 0, deleted: false, updated_at: t }
+  const def: Category = { id: 'default', name: '할 일', color: PALETTE[0], visibility: 'followers', allowed_ids: [], private: false, position: 0, deleted: false, updated_at: UNTOUCHED }
   return { categories: { default: def }, todos: {}, dirty: ['categories:default'], cursor: {}, userId: null }
 }
 
@@ -201,6 +206,19 @@ export function reorderCategories(ids: string[]) {
 }
 
 // ---- sync support ----
+
+/** True when there are edits on this device the server hasn't received. */
+export function hasPending() {
+  const { todos, categories } = pendingChanges()
+  return todos.length > 0 || categories.some((c) => c.updated_at !== UNTOUCHED)
+}
+
+/** Forgets everything stored on this device (used on sign-out). */
+export function resetLocal() {
+  db = initial()
+  dirty = new Set(db.dirty)
+  commit(false)
+}
 
 export function pendingChanges() {
   const out: { todos: Todo[]; categories: Category[] } = { todos: [], categories: [] }

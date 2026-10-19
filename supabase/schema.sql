@@ -93,6 +93,11 @@ create table if not exists public.follows (
 );
 create index if not exists follows_followee_idx on public.follows (followee_id);
 
+-- 팔로우는 승인제: 요청은 accepted=false 로 들어가고, 상대가 수락해야 내용을 볼 수 있음
+-- (이 줄이 처음 실행될 때 이미 있던 팔로우는 수락된 것으로 둠)
+alter table public.follows add column if not exists accepted boolean not null default true;
+alter table public.follows alter column accepted set default false;
+
 alter table public.profiles enable row level security;
 alter table public.follows enable row level security;
 
@@ -103,16 +108,28 @@ create policy "own profile insert" on public.profiles for insert to authenticate
 drop policy if exists "own profile update" on public.profiles;
 create policy "own profile update" on public.profiles for update to authenticated using (id = auth.uid()) with check (id = auth.uid());
 
+-- 수락된 팔로우는 누구나, 대기 중인 요청은 당사자 둘만 볼 수 있음
 drop policy if exists "follows readable" on public.follows;
-create policy "follows readable" on public.follows for select to authenticated using (true);
+create policy "follows readable" on public.follows for select to authenticated
+  using (accepted or follower_id = auth.uid() or followee_id = auth.uid());
+-- 요청은 내 이름으로, 수락되지 않은 상태로만 보낼 수 있음
 drop policy if exists "follow" on public.follows;
-create policy "follow" on public.follows for insert to authenticated with check (follower_id = auth.uid());
+create policy "follow" on public.follows for insert to authenticated
+  with check (follower_id = auth.uid() and not accepted);
+-- 수락은 요청받은 사람만, 바꿀 수 있는 칸은 accepted 하나뿐
+drop policy if exists "accept follow" on public.follows;
+create policy "accept follow" on public.follows for update to authenticated
+  using (followee_id = auth.uid()) with check (followee_id = auth.uid());
+revoke update on public.follows from authenticated, anon;
+grant update (accepted) on public.follows to authenticated;
+-- 언팔로우·요청 취소는 보낸 사람이, 거절·팔로워 삭제는 받은 사람이
 drop policy if exists "unfollow" on public.follows;
-create policy "unfollow" on public.follows for delete to authenticated using (follower_id = auth.uid());
+create policy "unfollow" on public.follows for delete to authenticated
+  using (follower_id = auth.uid() or followee_id = auth.uid());
 
 create or replace function public.is_following(target uuid) returns boolean
 language sql stable security definer set search_path = public as $$
-  select exists (select 1 from follows where follower_id = auth.uid() and followee_id = target)
+  select exists (select 1 from follows where follower_id = auth.uid() and followee_id = target and accepted)
 $$;
 
 -- 지금 로그인한 사람이 이 카테고리를 볼 수 있는지 (팔로우 여부는 정책에서 따로 확인)

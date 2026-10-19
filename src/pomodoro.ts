@@ -112,6 +112,11 @@ export function formatDuration(seconds: number) {
   return h ? `${h}시간${m % 60 ? ` ${m % 60}분` : ''}` : `${m}분`
 }
 
+/** Stops the timer and forgets which todo it was on and the daily counts (used on sign-out). */
+export function clearTimer() {
+  set({ phase: 'focus', endsAt: null, remaining: phaseLength(state.settings, 'focus'), round: 0, todoId: null, history: {} })
+}
+
 export function setSettings(patch: Partial<Settings>) {
   const settings = { ...state.settings, ...patch }
   set({ settings })

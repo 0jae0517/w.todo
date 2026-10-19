@@ -474,3 +474,7 @@ input, select {
 .wheel-item.on { color: var(--text); font-weight: 700; }
 .wheel-box .actions { margin: 10px 0 0; }
 .wheel-box .actions .primary { flex: 1; }
+
+.people li .link { margin: 0; align-self: center; }
+.people li .link.danger { color: var(--danger); width: auto; padding: 0; background: none; font-weight: 400; }
+.people li .person { flex: 1; min-width: 0; }

@@ -1,7 +1,8 @@
 import { useSyncExternalStore } from 'react'
 import type { RealtimeChannel, Session } from '@supabase/supabase-js'
 import { supabase } from './supabase'
-import { applyRemote, bindUser, getCursor, markPushed, onLocalChange, pendingChanges } from './store'
+import { clearTimer } from './pomodoro'
+import { UNTOUCHED, applyRemote, bindUser, getCursor, hasPending, markPushed, onLocalChange, pendingChanges, resetLocal } from './store'
 import type { Kind } from './types'
 
 export type SyncStatus = 'off' | 'signed-out' | 'syncing' | 'synced' | 'offline' | 'error'
@@ -64,12 +65,16 @@ async function push(userId: string) {
   const pending = pendingChanges()
   for (const kind of KINDS) {
     const rows = pending[kind]
-    if (!rows.length) continue
-    const { error } = await supabase!
-      .from(kind)
-      .upsert(rows.map((r) => ({ ...r, user_id: userId })), { onConflict: 'user_id,id' })
-    if (error) throw new Error(error.message)
-    markPushed(kind, rows)
+    // untouched starter rows only fill in what the account doesn't have yet
+    for (const fresh of [false, true]) {
+      const batch = rows.filter((r) => (r.updated_at === UNTOUCHED) === fresh)
+      if (!batch.length) continue
+      const { error } = await supabase!
+        .from(kind)
+        .upsert(batch.map((r) => ({ ...r, user_id: userId })), { onConflict: 'user_id,id', ignoreDuplicates: fresh })
+      if (error) throw new Error(error.message)
+      markPushed(kind, batch)
+    }
   }
 }
 
@@ -141,8 +146,22 @@ export async function sendLoginLink(email: string) {
   if (error) throw new Error(error.message)
 }
 
+/**
+ * Uploads what's left, signs out and wipes this account's data from the device,
+ * so the next person using it can't see it.
+ */
 export async function signOut() {
-  await supabase?.auth.signOut()
+  while (running) await new Promise((r) => setTimeout(r, 100))
+  await syncNow()
+  if (
+    hasPending() &&
+    !confirm('아직 서버에 올라가지 않은 변경이 있어요. 로그아웃하면 이 기기에서 사라져요. 그래도 로그아웃할까요?')
+  )
+    return
+  // only this device; other devices stay signed in
+  await supabase?.auth.signOut({ scope: 'local' })
+  resetLocal()
+  clearTimer()
 }
 
 export const currentUserId = () => state.session?.user.id ?? null

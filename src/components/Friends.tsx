@@ -1,18 +1,22 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
 import {
+  acceptRequest,
   follow,
   followingIds,
   listFollowers,
   listFollowing,
+  listRequests,
+  removeFollower,
   saveProfile,
   searchProfiles,
   unfollow,
   useMyProfile,
+  type FollowState,
   type Profile,
 } from '../social'
 import { useSync } from '../sync'
-import FriendView from './FriendView'
+import FriendView, { FOLLOW_LABEL } from './FriendView'
 
 export default function Friends({ onLogin }: { onLogin: () => void }) {
   const { session } = useSync()
@@ -73,18 +77,20 @@ function FriendHome({ me, onOpen, onEditProfile }: { me: Profile; onOpen: (p: Pr
   const [tab, setTab] = useState<'following' | 'followers'>('following')
   const [following, setFollowing] = useState<Profile[]>([])
   const [followers, setFollowers] = useState<Profile[]>([])
-  const [ids, setIds] = useState<Set<string>>(new Set())
+  const [requests, setRequests] = useState<Profile[]>([])
+  const [ids, setIds] = useState<Map<string, FollowState>>(new Map())
   const [q, setQ] = useState('')
   const [results, setResults] = useState<Profile[] | null>(null)
   const [editing, setEditing] = useState(false)
   const [err, setErr] = useState<string | null>(null)
 
   const refresh = () =>
-    Promise.all([listFollowing(), listFollowers(), followingIds()])
-      .then(([a, b, c]) => {
+    Promise.all([listFollowing(), listFollowers(), followingIds(), listRequests()])
+      .then(([a, b, c, d]) => {
         setFollowing(a)
         setFollowers(b)
         setIds(c)
+        setRequests(d)
       })
       .catch((e) => setErr(e.message))
 
@@ -98,10 +104,10 @@ function FriendHome({ me, onOpen, onEditProfile }: { me: Profile; onOpen: (p: Pr
     return () => clearTimeout(t)
   }, [q])
 
-  const toggle = async (p: Profile) => {
+  const run = async (action: Promise<void>) => {
     setErr(null)
     try {
-      await (ids.has(p.id) ? unfollow(p.id) : follow(p.id))
+      await action
       await refresh()
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e))
@@ -131,6 +137,26 @@ function FriendHome({ me, onOpen, onEditProfile }: { me: Profile; onOpen: (p: Pr
       </div>
       <input className="search" placeholder="아이디나 이름으로 친구 찾기" value={q} onChange={(e) => setQ(e.target.value)} />
       {err && <p className="error">{err}</p>}
+      {requests.length > 0 && !results && (
+        <>
+          <h3 className="sub-title">팔로우 요청 {requests.length}</h3>
+          <ul className="people requests">
+            {requests.map((p) => (
+              <li key={p.id}>
+                <button className="person" onClick={() => onOpen(p)}>
+                  <span className="avatar">{(p.name || p.username).slice(0, 1).toUpperCase()}</span>
+                  <span>
+                    <strong>{p.name || p.username}</strong>
+                    <span className="handle">@{p.username}</span>
+                  </span>
+                </button>
+                <button className="link" onClick={() => run(removeFollower(p.id))}>거절</button>
+                <button className="follow" onClick={() => run(acceptRequest(p.id))}>수락</button>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
       <ul className="people">
         {list.map((p) => (
           <li key={p.id}>
@@ -141,8 +167,13 @@ function FriendHome({ me, onOpen, onEditProfile }: { me: Profile; onOpen: (p: Pr
                 <span className="handle">@{p.username}</span>
               </span>
             </button>
-            <button className={ids.has(p.id) ? 'follow on' : 'follow'} onClick={() => toggle(p)}>
-              {ids.has(p.id) ? '팔로잉' : tab === 'followers' && !results ? '맞팔로우' : '팔로우'}
+            {tab === 'followers' && !results && (
+              <button className="link danger" onClick={() => confirm(`${p.name || p.username}님을 팔로워에서 삭제할까요?`) && run(removeFollower(p.id))}>
+                삭제
+              </button>
+            )}
+            <button className={ids.has(p.id) ? 'follow on' : 'follow'} onClick={() => run(ids.has(p.id) ? unfollow(p.id) : follow(p.id))}>
+              {ids.has(p.id) ? FOLLOW_LABEL[ids.get(p.id)!] : tab === 'followers' && !results ? '맞팔로우' : '팔로우'}
             </button>
           </li>
         ))}
