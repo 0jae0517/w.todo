@@ -3,6 +3,8 @@ import { STATUS_LABEL } from './components/Account'
 import Calendar, { type DayStat } from './components/Calendar'
 import CategorySheet from './components/CategorySheet'
 import DayList from './components/DayList'
+import FriendStrip from './components/FriendStrip'
+import FriendView from './components/FriendView'
 import Friends from './components/Friends'
 import { CheckIcon, CloudIcon, FriendsIcon, PersonIcon, PlusIcon, TimerIcon } from './components/Icons'
 import Me from './components/Me'
@@ -10,7 +12,7 @@ import Pomodoro from './components/Pomodoro'
 import TodoSheet from './components/TodoSheet'
 import { dayLabel, todayKey } from './date'
 import { holidayName } from './holidays'
-import { useMyReactions } from './social'
+import { useMyReactions, type Profile } from './social'
 import { useStore } from './store'
 import { currentUserId, useSync } from './sync'
 
@@ -26,6 +28,7 @@ export default function App() {
   const [selected, setSelected] = useState(todayKey)
   const [mode, setMode] = useState<'week' | 'month'>('month')
   const [panel, setPanel] = useState<Panel>(null)
+  const [friend, setFriend] = useState<Profile | null>(null)
 
   const stats = useMemo(() => {
     const m = new Map<string, DayStat>()
@@ -47,7 +50,7 @@ export default function App() {
       <header className="top">
         <h1>{TITLES[tab]}</h1>
         <div className="top-actions">
-          {tab === 'todos' && (
+          {tab === 'todos' && !friend && (
             <button className="icon-btn" onClick={() => setPanel({ kind: 'categories' })} aria-label="카테고리 추가" title="카테고리 추가">
               <PlusIcon />
             </button>
@@ -59,7 +62,13 @@ export default function App() {
         </div>
       </header>
 
-      {tab === 'todos' && (
+      {tab === 'todos' && <FriendStrip selected={friend} onSelect={setFriend} onFind={() => setTab('friends')} />}
+      {tab === 'todos' && friend && (
+        <main>
+          <FriendView key={friend.id} friend={friend} />
+        </main>
+      )}
+      {tab === 'todos' && !friend && (
         <>
           <Calendar
             selected={selected}

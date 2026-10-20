@@ -10,9 +10,10 @@ import Heatmap from './Heatmap'
 
 export const FOLLOW_LABEL = { following: '팔로잉', requested: '요청됨', none: '팔로우' }
 
-export default function FriendView({ friend, onBack }: { friend: Profile; onBack: () => void }) {
+/** A friend's calendar and todos. Without `onBack` it's shown inline (from the strip on the todo tab). */
+export default function FriendView({ friend, onBack }: { friend: Profile; onBack?: () => void }) {
   const [selected, setSelected] = useState(todayKey)
-  const [mode, setMode] = useState<'week' | 'month'>('week')
+  const [mode, setMode] = useState<'week' | 'month'>(onBack ? 'week' : 'month')
   const [data, setData] = useState<{ categories: Category[]; todos: Todo[] }>({ categories: [], todos: [] })
   const [reactions, setReactions] = useState<Reaction[]>([])
   // undefined while loading, null when not following
@@ -99,7 +100,7 @@ export default function FriendView({ friend, onBack }: { friend: Profile; onBack
   return (
     <div className="friend-view">
       <div className="friend-head">
-        <button className="icon-btn" onClick={onBack} aria-label="뒤로">‹</button>
+        {onBack && <button className="icon-btn" onClick={onBack} aria-label="뒤로">‹</button>}
         <div className="friend-name">
           <strong>{friend.name || friend.username}</strong>
           <span className="handle">@{friend.username}</span>

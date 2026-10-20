@@ -533,3 +533,13 @@ input, select {
 .seg button.on { background: var(--bg); color: var(--text); font-weight: 700; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); }
 .card > .sub-title:first-child, .card .pattern:first-child { margin-top: 0; }
 .settings .login { margin-bottom: 4px; }
+
+/* friend strip on the todo tab */
+.friend-strip { display: flex; gap: 12px; overflow-x: auto; padding: 4px 16px 10px; scrollbar-width: none; }
+.friend-strip::-webkit-scrollbar { display: none; }
+.strip-item { flex: none; display: flex; flex-direction: column; align-items: center; gap: 4px; width: 52px; padding: 0; background: none; }
+.strip-item .avatar { width: 44px; height: 44px; font-size: 17px; border: 2px solid transparent; }
+.strip-item.on .avatar { border-color: var(--accent); }
+.strip-item .avatar.add { color: var(--muted); font-size: 22px; font-weight: 400; }
+.strip-name { max-width: 100%; font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.strip-item.on .strip-name { color: var(--text); font-weight: 700; }
