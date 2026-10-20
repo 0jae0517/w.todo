@@ -523,3 +523,13 @@ input, select {
 .recap-open.fresh .muted { color: #fff; }
 .recap-img { display: block; width: 100%; border-radius: 16px; margin-bottom: 12px; }
 .card .heat-cell, .card .chips button:not(.on) { background: var(--bg); }
+
+/* 내 정보 layout */
+.account-row { display: flex; align-items: center; gap: 12px; width: 100%; padding: 14px 16px; border-radius: 16px; background: var(--surface); text-align: left; }
+.account-row .dot { position: static; flex: none; }
+.account-row .profile-counts { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.seg { display: flex; padding: 4px; border-radius: 12px; background: var(--surface); }
+.seg button { flex: 1; padding: 8px 0; border-radius: 9px; font-size: 14px; color: var(--muted); }
+.seg button.on { background: var(--bg); color: var(--text); font-weight: 700; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); }
+.card > .sub-title:first-child, .card .pattern:first-child { margin-top: 0; }
+.settings .login { margin-bottom: 4px; }

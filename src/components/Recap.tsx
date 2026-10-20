@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { addDays, addMonths, fromKey, todayKey, toKey } from '../date'
 import { formatDuration } from '../pomodoro'
 import type { Category, Todo } from '../types'
-import Sheet from './Sheet'
 
 const MIN_DONE = 5
 const W = 1080
@@ -66,24 +65,15 @@ function compute(p: Period, todos: Todo[], categories: Category[]): RecapStats {
   }
 }
 
-/** Card on the 내 정보 tab that opens the recap sheet. */
-export default function Recap({ todos, categories }: { todos: Todo[]; categories: Category[] }) {
-  const [open, setOpen] = useState(false)
-  // the first week of a month is when last month's recap is news
-  const fresh = fromKey(todayKey()).getDate() <= 7 && compute('lastMonth', todos, categories).done >= MIN_DONE
-  return (
-    <>
-      <button className={`recap-open ${fresh ? 'fresh' : ''}`} onClick={() => setOpen(true)}>
-        <span>{fresh ? `🎉 ${range('lastMonth').label} 회고가 준비됐어요` : '📸 회고 카드 만들기'}</span>
-        <span className="muted">›</span>
-      </button>
-      {open && <RecapSheet todos={todos} categories={categories} initial={fresh ? 'lastMonth' : 'thisMonth'} onClose={() => setOpen(false)} />}
-    </>
-  )
+/** True in the first week of a month when last month has enough to recap. */
+export function recapReady(todos: Todo[], categories: Category[]) {
+  return fromKey(todayKey()).getDate() <= 7 && compute('lastMonth', todos, categories).done >= MIN_DONE
 }
 
-function RecapSheet({ todos, categories, initial, onClose }: { todos: Todo[]; categories: Category[]; initial: Period; onClose: () => void }) {
-  const [period, setPeriod] = useState<Period>(initial)
+export const lastMonthLabel = () => range('lastMonth').label
+
+export default function Recap({ todos, categories }: { todos: Todo[]; categories: Category[] }) {
+  const [period, setPeriod] = useState<Period>(() => (recapReady(todos, categories) ? 'lastMonth' : 'thisMonth'))
   const stats = useMemo(() => compute(period, todos, categories), [period, todos, categories])
   const canvas = useRef<HTMLCanvasElement>(null)
   const [url, setUrl] = useState<string | null>(null)
@@ -116,8 +106,7 @@ function RecapSheet({ todos, categories, initial, onClose }: { todos: Todo[]; ca
     })
 
   return (
-    <Sheet onClose={onClose}>
-      <h2 className="sheet-title">회고</h2>
+    <div>
       <div className="chips">
         {(['lastMonth', 'thisMonth', 'thisYear'] as Period[]).map((p) => (
           <button key={p} className={period === p ? 'on' : ''} onClick={() => setPeriod(p)}>
@@ -136,7 +125,7 @@ function RecapSheet({ todos, categories, initial, onClose }: { todos: Todo[]; ca
           {stats.label}에 완료한 일이 {stats.done}개예요. {MIN_DONE}개 이상 쌓이면 회고 카드를 만들어 드려요.
         </p>
       )}
-    </Sheet>
+    </div>
   )
 }
 
