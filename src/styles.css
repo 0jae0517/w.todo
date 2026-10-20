@@ -543,3 +543,10 @@ input, select {
 .strip-item .avatar.add { color: var(--muted); font-size: 22px; font-weight: 400; }
 .strip-name { max-width: 100%; font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .strip-item.on .strip-name { color: var(--text); font-weight: 700; }
+
+/* fold categories */
+.group-bar { display: flex; align-items: center; gap: 8px; }
+.fold { margin-left: auto; display: flex; align-items: center; gap: 6px; padding: 4px 6px; background: none; color: var(--muted); font-size: 13px; }
+.fold-count { font-weight: 600; font-variant-numeric: tabular-nums; }
+.chev { display: block; transition: transform 0.15s; }
+.chev.closed { transform: rotate(-90deg); }
