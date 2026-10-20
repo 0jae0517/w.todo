@@ -146,7 +146,7 @@ export default function DayList({ date, categories, todos, reactions, myId, onOp
                             🔁
                           </span>
                         )}
-                        {t.title}
+                        <span className="todo-text">{t.title}</span>
                         {t.focus_seconds > 0 && <span className="tomato"> 🍅 {formatDuration(t.focus_seconds)}</span>}
                       </span>
                       {editable && (
