@@ -551,3 +551,23 @@ input, select {
 .fold-count { font-weight: 600; font-variant-numeric: tabular-nums; }
 .chev { display: block; transition: transform 0.15s; }
 .chev.closed { transform: rotate(-90deg); }
+
+/* templates */
+.friends-seg { margin: 4px 16px 12px; }
+.templates { padding: 0 16px 24px; }
+.tpl-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.tpl-card { display: flex; flex-direction: column; gap: 4px; width: 100%; padding: 14px 16px; border-radius: 14px; background: var(--surface); text-align: left; border-left: 4px solid var(--c); }
+.tpl-card strong { font-size: 16px; }
+.tpl-card .muted { font-size: 12px; }
+.tpl-card-desc { font-size: 13px; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.tpl-head { border-left: 4px solid var(--c); padding-left: 12px; margin-bottom: 8px; }
+.tpl-head .sheet-title { margin-bottom: 2px; }
+.tpl-description { font-size: 14px; white-space: pre-wrap; margin: 0 0 8px; }
+.tpl-items { list-style: none; margin: 0 0 12px; padding: 0; }
+.tpl-items li { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.tpl-items li:last-child { border-bottom: 0; }
+.tpl-items .muted { font-size: 12px; white-space: nowrap; }
+.tpl-item-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tpl-desc { width: 100%; min-height: 64px; margin: 0 0 8px; padding: 10px 12px; border: 0; border-radius: 10px; background: var(--surface); font: inherit; font-size: 14px; color: var(--text); resize: vertical; box-sizing: border-box; }
+.tpl-done { padding: 12px; border-radius: 12px; background: var(--surface); font-size: 14px; font-weight: 600; }
+.sheet .vis-options { margin: 4px 0 12px; }

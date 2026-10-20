@@ -255,3 +255,46 @@ do $$ begin
   alter publication supabase_realtime add table public.sessions;
 exception when duplicate_object then null;
 end $$;
+
+-- ============================================================
+-- 템플릿 (루틴·할 일 묶음을 링크나 공개 목록으로 공유)
+-- ============================================================
+create table if not exists public.templates (
+  id          uuid primary key default gen_random_uuid(),
+  owner_id    uuid not null default auth.uid() references public.profiles on delete cascade,
+  title       text not null check (char_length(title) between 1 and 60),
+  description text not null default '' check (char_length(description) <= 500),
+  color       text not null default '#4f7cff' check (color ~ '^#[0-9a-fA-F]{6}$'),
+  -- [{ "title": "...", "time": "07:00" | null, "days": [1,2,3] }], days 가 비어 있으면 한 번만 하는 일
+  items       jsonb not null check (jsonb_typeof(items) = 'array' and jsonb_array_length(items) between 1 and 50),
+  listed      boolean not null default true,  -- true: 템플릿 목록에 공개, false: 링크를 아는 사람만
+  uses        integer not null default 0,
+  created_at  timestamptz not null default now()
+);
+create index if not exists templates_listed_idx on public.templates (listed, uses desc);
+
+alter table public.templates enable row level security;
+
+-- 링크를 아는 사람은 로그인하지 않아도 볼 수 있음 (id 는 추측할 수 없는 uuid)
+drop policy if exists "templates readable" on public.templates;
+create policy "templates readable" on public.templates for select to anon, authenticated using (true);
+drop policy if exists "own templates insert" on public.templates;
+create policy "own templates insert" on public.templates for insert to authenticated
+  with check (owner_id = auth.uid() and uses = 0);
+drop policy if exists "own templates update" on public.templates;
+create policy "own templates update" on public.templates for update to authenticated
+  using (owner_id = auth.uid()) with check (owner_id = auth.uid());
+drop policy if exists "own templates delete" on public.templates;
+create policy "own templates delete" on public.templates for delete to authenticated using (owner_id = auth.uid());
+grant select on public.templates to anon, authenticated;
+grant insert, delete on public.templates to authenticated;
+revoke update on public.templates from authenticated, anon;
+grant update (title, description, color, items, listed) on public.templates to authenticated;
+
+-- 누가 템플릿을 가져가면 사용 횟수 +1 (본인 것은 세지 않음)
+create or replace function public.use_template(tid uuid) returns void
+language sql security definer set search_path = public as $$
+  update templates set uses = uses + 1 where id = tid and owner_id <> auth.uid()
+$$;
+revoke execute on function public.use_template(uuid) from public, anon;
+grant execute on function public.use_template(uuid) to authenticated;

@@ -174,11 +174,13 @@ export const deleteTodo = (id: string) => updateTodo(id, { deleted: true })
 
 // ---- categories ----
 
-export function addCategory(name: string) {
+export function addCategory(name: string, color?: string) {
   const used = new Set(snapshot.categories.map((c) => c.color))
-  const color = PALETTE.find((c) => !used.has(c)) ?? PALETTE[snapshot.categories.length % PALETTE.length]
-  put('categories', { id: newId(), name, color, visibility: 'followers', allowed_ids: [], private: false, position: Date.now(), deleted: false, updated_at: now() })
+  color ??= PALETTE.find((c) => !used.has(c)) ?? PALETTE[snapshot.categories.length % PALETTE.length]
+  const id = newId()
+  put('categories', { id, name, color, visibility: 'followers', allowed_ids: [], private: false, position: Date.now(), deleted: false, updated_at: now() })
   commit(true)
+  return id
 }
 
 export function updateCategory(id: string, patch: Partial<Omit<Category, 'id'>>) {
@@ -239,6 +241,36 @@ const REPEAT_AHEAD = 30
 /** Undone, not deleted todos of a routine after `date`. */
 function laterRepeats(routineId: string, date: string) {
   return Object.values(db.todos).filter((t) => t.routine_id === routineId && t.date > date && !t.done && !t.deleted)
+}
+
+/**
+ * Copies a shared template into my list: repeating items become routines
+ * starting on `date`, one-off items become todos on `date`.
+ */
+export function applyTemplate(items: { title: string; time: string | null; days: number[] }[], categoryId: string, date: string) {
+  const t = now()
+  items.forEach((it, i) => {
+    if (it.days.length) {
+      put('routines', { id: newId(), title: it.title, category_id: categoryId, time: it.time, days: it.days, start_date: date, deleted: false, updated_at: t })
+    } else {
+      put('todos', {
+        id: newId(),
+        title: it.title,
+        date,
+        category_id: categoryId,
+        time: it.time,
+        done: false,
+        routine_id: null,
+        pomodoros: 0,
+        focus_seconds: 0,
+        position: Date.now() + i,
+        deleted: false,
+        updated_at: t,
+      })
+    }
+  })
+  commit(true)
+  generateRepeats()
 }
 
 /** Makes a todo repeat on the given weekdays (0 = Sunday), or changes its days. */

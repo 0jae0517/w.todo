@@ -9,6 +9,7 @@ import Friends from './components/Friends'
 import { CheckIcon, CloudIcon, FriendsIcon, PersonIcon, PlusIcon, TimerIcon } from './components/Icons'
 import Me from './components/Me'
 import Pomodoro from './components/Pomodoro'
+import { TemplateView } from './components/Templates'
 import TodoSheet from './components/TodoSheet'
 import { dayLabel, todayKey } from './date'
 import { holidayName } from './holidays'
@@ -29,6 +30,12 @@ export default function App() {
   const [mode, setMode] = useState<'week' | 'month'>('month')
   const [panel, setPanel] = useState<Panel>(null)
   const [friend, setFriend] = useState<Profile | null>(null)
+  // a shared template link: ?t=<id>
+  const [templateId, setTemplateId] = useState(() => {
+    const id = new URLSearchParams(location.search).get('t')
+    if (id) history.replaceState(null, '', location.pathname)
+    return id
+  })
 
   const stats = useMemo(() => {
     const m = new Map<string, DayStat>()
@@ -125,6 +132,7 @@ export default function App() {
           }}
         />
       )}
+      {templateId && <TemplateView id={templateId} onClose={() => setTemplateId(null)} />}
       {panel?.kind === 'categories' && <CategorySheet categories={categories} onClose={() => setPanel(null)} />}
     </div>
   )

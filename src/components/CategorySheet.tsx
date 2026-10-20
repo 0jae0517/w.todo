@@ -1,24 +1,30 @@
 import { useEffect, useState } from 'react'
 import { listFollowers, type Profile } from '../social'
-import { PALETTE, addCategory, deleteCategory, moveCategory, setVisibility, updateCategory } from '../store'
+import { PALETTE, addCategory, deleteCategory, setVisibility, updateCategory } from '../store'
 import { useSync } from '../sync'
 import type { Category, Visibility } from '../types'
 import Sheet from './Sheet'
+import { TemplateMaker } from './Templates'
 
 export default function CategorySheet({ categories, onClose }: { categories: Category[]; onClose: () => void }) {
   const [name, setName] = useState('')
   const [picking, setPicking] = useState<string | null>(null)
   const [visFor, setVisFor] = useState<string | null>(null)
+  const [sharing, setSharing] = useState<Category | null>(null)
   const add = () => {
     if (name.trim()) addCategory(name.trim())
     setName('')
   }
 
+  // shown in place of this sheet; a sheet inside a sheet gets clipped
+  if (sharing) return <TemplateMaker category={sharing} onClose={() => setSharing(null)} />
+
   return (
     <Sheet title="카테고리 관리" onClose={onClose}>
-      <p className="sheet-sub">👥 팔로워 공개 · 👤 일부 공개 · 🔒 나만 보기</p>
+      <p className="sheet-sub">👥 팔로워 공개 · 👤 일부 공개 · 🔒 나만 보기 · 📤 템플릿으로 공유</p>
+      <p className="sheet-sub">순서는 할 일 화면에서 카테고리 이름을 길게 눌러 끌면 바뀌어요.</p>
       <ul className="cat-list">
-        {categories.map((c, i) => (
+        {categories.map((c) => (
           <li key={c.id}>
             <div className="cat-row">
               <button
@@ -42,8 +48,7 @@ export default function CategorySheet({ categories, onClose }: { categories: Cat
               >
                 {VIS[c.visibility].icon}
               </button>
-              <button className="icon-btn" disabled={i === 0} onClick={() => moveCategory(c.id, -1)} aria-label="위로">↑</button>
-              <button className="icon-btn" disabled={i === categories.length - 1} onClick={() => moveCategory(c.id, 1)} aria-label="아래로">↓</button>
+              <button className="icon-btn" onClick={() => setSharing(c)} aria-label="템플릿으로 공유" title="템플릿으로 공유">📤</button>
               <button
                 className="icon-btn"
                 onClick={() => confirm(`'${c.name}' 카테고리와 그 안의 할 일을 모두 삭제할까요?`) && deleteCategory(c.id)}

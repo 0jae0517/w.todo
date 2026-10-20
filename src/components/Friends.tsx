@@ -17,8 +17,26 @@ import {
 } from '../social'
 import { useSync } from '../sync'
 import FriendView, { FOLLOW_LABEL } from './FriendView'
+import { TemplateGallery } from './Templates'
 
 export default function Friends({ onLogin }: { onLogin: () => void }) {
+  const [view, setView] = useState<'friends' | 'templates'>('friends')
+  return (
+    <>
+      <div className="seg friends-seg" role="tablist">
+        <button role="tab" aria-selected={view === 'friends'} className={view === 'friends' ? 'on' : ''} onClick={() => setView('friends')}>
+          친구
+        </button>
+        <button role="tab" aria-selected={view === 'templates'} className={view === 'templates' ? 'on' : ''} onClick={() => setView('templates')}>
+          템플릿
+        </button>
+      </div>
+      {view === 'friends' ? <FriendsPanel onLogin={onLogin} /> : supabase ? <TemplateGallery /> : <p className="empty">동기화 서버가 아직 연결되지 않았어요.</p>}
+    </>
+  )
+}
+
+function FriendsPanel({ onLogin }: { onLogin: () => void }) {
   const { session } = useSync()
   const { profile, reload } = useMyProfile()
   const [viewing, setViewing] = useState<Profile | null>(null)
