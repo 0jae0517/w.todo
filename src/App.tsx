@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { STATUS_LABEL } from './components/Account'
 import Calendar, { type DayStat } from './components/Calendar'
 import CategorySheet from './components/CategorySheet'
@@ -13,6 +13,7 @@ import { TemplateView } from './components/Templates'
 import TodoSheet from './components/TodoSheet'
 import { dayLabel, todayKey } from './date'
 import { holidayName } from './holidays'
+import { startNative } from './native'
 import { useMyReactions, type Profile } from './social'
 import { useStore } from './store'
 import { currentUserId, useSync } from './sync'
@@ -36,6 +37,7 @@ export default function App() {
     if (id) history.replaceState(null, '', location.pathname)
     return id
   })
+  useEffect(() => startNative(setTemplateId), [])
 
   const stats = useMemo(() => {
     const m = new Map<string, DayStat>()

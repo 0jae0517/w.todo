@@ -1,3 +1,4 @@
+import { shareBase } from './native'
 import { supabase } from './supabase'
 import { currentUserId } from './sync'
 import type { Profile } from './social'
@@ -34,7 +35,7 @@ function check<T>({ data, error }: { data: T; error: { message: string } | null 
   return data
 }
 
-export const templateLink = (id: string) => `${location.origin}${location.pathname}?t=${id}`
+export const templateLink = (id: string) => `${shareBase()}?t=${id}`
 
 /** Public templates, most used first; `q` filters by title. */
 export async function listTemplates(q = '') {

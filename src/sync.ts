@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react'
 import type { RealtimeChannel, Session } from '@supabase/supabase-js'
 import { supabase } from './supabase'
+import { authRedirect, isNative, nativeOAuth } from './native'
 import { clearTimer } from './pomodoro'
 import { UNTOUCHED, applyRemote, bindUser, generateRepeats, getCursor, hasPending, markPushed, onLocalChange, pendingChanges, resetLocal } from './store'
 import type { Kind } from './types'
@@ -148,7 +149,7 @@ export function startSync() {
 export async function sendLoginLink(email: string) {
   const { error } = await supabase!.auth.signInWithOtp({
     email,
-    options: { emailRedirectTo: location.origin + location.pathname },
+    options: { emailRedirectTo: authRedirect() },
   })
   if (error) throw new Error(error.message)
 }
@@ -183,7 +184,7 @@ export async function signUp(email: string, password: string) {
   const { data, error } = await supabase!.auth.signUp({
     email,
     password,
-    options: { emailRedirectTo: location.origin + location.pathname },
+    options: { emailRedirectTo: authRedirect() },
   })
   if (error) throw new Error(error.message)
   return !data.session
@@ -195,9 +196,10 @@ export async function setPassword(password: string) {
 }
 
 export async function signInWithProvider(provider: 'google' | 'kakao') {
+  if (isNative) return nativeOAuth(provider)
   const { error } = await supabase!.auth.signInWithOAuth({
     provider,
-    options: { redirectTo: location.origin + location.pathname },
+    options: { redirectTo: authRedirect() },
   })
   if (error) throw new Error(error.message)
 }

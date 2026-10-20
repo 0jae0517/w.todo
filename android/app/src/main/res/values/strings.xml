@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">w.todo</string>
+    <string name="title_activity_main">w.todo</string>
+    <string name="package_name">com.wtodo.app</string>
+    <string name="custom_url_scheme">com.wtodo.app</string>
+</resources>

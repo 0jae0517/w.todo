@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import { todayKey } from './date'
+import { scheduleTimerAlert } from './native'
 import { addSession, getState, updateTodo } from './store'
 
 /**
@@ -32,6 +33,8 @@ export interface TimerState {
 }
 
 const KEY = 'todo-app:pomodoro'
+const FOCUS_DONE = '집중 시간이 끝났어요. 잠깐 쉬어요!'
+const BREAK_DONE = '휴식이 끝났어요. 다시 집중해 볼까요?'
 const DEFAULTS: Settings = { focus: 25, short: 5, long: 15, longEvery: 4 }
 
 export const PHASE_LABEL: Record<Phase, string> = { focus: '집중', short: '짧은 휴식', long: '긴 휴식' }
@@ -60,6 +63,8 @@ function set(patch: Partial<TimerState>) {
     // ignore
   }
   listeners.forEach((l) => l())
+  // in the Android app the phase end also gets a system notification, so it arrives with the app closed
+  scheduleTimerAlert(state.endsAt, state.phase === 'focus' ? FOCUS_DONE : BREAK_DONE)
 }
 
 export const useTimer = () =>
@@ -138,7 +143,7 @@ function finish() {
       })
   }
   skip()
-  notify(wasFocus ? '집중 시간이 끝났어요. 잠깐 쉬어요!' : '휴식이 끝났어요. 다시 집중해 볼까요?')
+  notify(wasFocus ? FOCUS_DONE : BREAK_DONE)
 }
 
 function notify(body: string) {

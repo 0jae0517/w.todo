@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- status bar icon for Pomodoro alerts: the "w." mark in white -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+    <path
+        android:pathData="M105,196 L159,330 L215,214 L271,330 L325,196"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="44"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M381,306 m-26,0 a26,26 0 1,0 52,0 a26,26 0 1,0 -52,0" />
+</vector>
