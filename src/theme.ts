@@ -20,7 +20,7 @@ let theme = read()
 export function applyTheme() {
   document.documentElement.dataset.theme = theme
   for (const m of document.querySelectorAll('meta[name="theme-color"]'))
-    m.setAttribute('content', theme === 'chalk' ? '#2f4a3f' : m.getAttribute('media')?.includes('dark') ? '#121316' : '#ffffff')
+    m.setAttribute('content', theme === 'chalk' ? '#2e3440' : m.getAttribute('media')?.includes('dark') ? '#121316' : '#ffffff')
 }
 
 export function setTheme(t: Theme) {

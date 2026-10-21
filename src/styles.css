@@ -592,13 +592,13 @@ input, select {
   border: 1.5px solid var(--line); background: var(--bg); color: var(--text); font-size: 14px; cursor: pointer;
 }
 .theme-opt.on { border-color: var(--accent); background: var(--surface); font-weight: 700; }
-.theme-opt.t-chalk { background: #2f4a3f; color: #f4f1ea; font-family: 'Gamja Flower', sans-serif; }
+.theme-opt.t-chalk { background: #2e3440; color: #f4f1ea; font-family: 'Gamja Flower', sans-serif; }
 .theme-opt.t-chalk .mascot { color: #f4f1ea; }
 
 /* ---- 칠판 테마 ---- */
 :root[data-theme='chalk'] {
-  --bg: #2f4a3f;
-  --surface: #3b5a4d;
+  --bg: #2e3440;
+  --surface: #3b4252;
   --text: #fffdf6;
   --muted: #e2ded5;
   --line: rgba(255, 253, 246, 0.3);
