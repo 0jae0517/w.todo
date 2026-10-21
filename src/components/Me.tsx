@@ -12,6 +12,8 @@ import { ProfileForm } from './Friends'
 import Heatmap from './Heatmap'
 import Recap, { lastMonthLabel, recapReady } from './Recap'
 import Sheet from './Sheet'
+import Mascot from './Mascot'
+import { setTheme, useTheme, type Theme } from '../theme'
 
 type View = 'summary' | 'grass' | 'focus' | 'recap'
 const VIEWS: [View, string][] = [
@@ -50,6 +52,7 @@ export default function Me({ todos, categories }: { todos: Todo[]; categories: C
           <span>›</span>
         </button>
       )}
+      <ThemePicker />
       <div className="seg" role="tablist">
         {VIEWS.map(([v, label]) => (
           <button key={v} role="tab" aria-selected={view === v} className={view === v ? 'on' : ''} onClick={() => pick(v)}>
@@ -285,4 +288,24 @@ function dateLabel(k: string) {
   if (k === addDays(today, -1)) return '어제'
   const d = fromKey(k)
   return `${d.getMonth() + 1}/${d.getDate()} (${WEEKDAYS[d.getDay()]})`
+}
+
+const THEMES: [Theme, string][] = [
+  ['basic', '기본'],
+  ['chalk', '칠판'],
+]
+
+function ThemePicker() {
+  const theme = useTheme()
+  return (
+    <div className="theme-picker">
+      <span className="theme-label">테마</span>
+      {THEMES.map(([t, label]) => (
+        <button key={t} className={`theme-opt t-${t} ${theme === t ? 'on' : ''}`} onClick={() => setTheme(t)} aria-pressed={theme === t}>
+          <Mascot size={28} mood={theme === t ? 'happy' : 'base'} />
+          {label}
+        </button>
+      ))}
+    </div>
+  )
 }

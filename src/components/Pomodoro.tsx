@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { todayKey } from '../date'
 import { PHASE_LABEL, formatDuration, pause, phaseLength, reset, setSettings, setTodo, skip, start, timeLeft, useTimer, type Settings } from '../pomodoro'
 import type { Todo } from '../types'
+import Mascot from './Mascot'
 
 const fmt = (ms: number) => {
   const s = Math.ceil(ms / 1000)
@@ -39,6 +40,7 @@ export default function Pomodoro({ todos }: { todos: Todo[] }) {
       {current && current.focus_seconds > 0 && (
         <p className="pomo-total">지금까지 {formatDuration(current.focus_seconds)} 집중 · 🍅 {current.pomodoros}</p>
       )}
+      <Mascot mood={!running ? 'base' : t.phase === 'focus' ? 'focus' : 'sleep'} size={76} />
       <div className="pomo-phases">
         {(['focus', 'short', 'long'] as const).map((p) => (
           <span key={p} className={p === t.phase ? 'on' : ''}>{PHASE_LABEL[p]}</span>

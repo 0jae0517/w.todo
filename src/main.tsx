@@ -4,8 +4,13 @@ import App from './App'
 import { isNative } from './native'
 import { startTimerLoop } from './pomodoro'
 import { startSync } from './sync'
+import '@fontsource/gaegu/400.css'
+import '@fontsource/gaegu/700.css'
+import '@fontsource/gamja-flower/400.css'
 import './styles.css'
+import { applyTheme } from './theme'
 
+applyTheme()
 startSync()
 startTimerLoop()
 

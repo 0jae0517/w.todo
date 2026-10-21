@@ -7,6 +7,7 @@ import FriendStrip from './components/FriendStrip'
 import FriendView from './components/FriendView'
 import Friends from './components/Friends'
 import { CheckIcon, CloudIcon, FriendsIcon, PersonIcon, PlusIcon, TimerIcon } from './components/Icons'
+import Mascot, { ChalkFilter, type Mood } from './components/Mascot'
 import Me from './components/Me'
 import Pomodoro from './components/Pomodoro'
 import { TemplateView } from './components/Templates'
@@ -56,6 +57,7 @@ export default function App() {
 
   return (
     <div className="app">
+      <ChalkFilter />
       <header className="top">
         <h1>{TITLES[tab]}</h1>
         <div className="top-actions">
@@ -99,6 +101,7 @@ export default function App() {
               myId={currentUserId()}
               onOpenTodo={(id) => setPanel({ kind: 'todo', id })}
             />
+            <DayMascot todos={dayTodos} isToday={selected === todayKey()} />
           </main>
         </>
       )}
@@ -136,6 +139,22 @@ export default function App() {
       )}
       {templateId && <TemplateView id={templateId} onClose={() => setTemplateId(null)} />}
       {panel?.kind === 'categories' && <CategorySheet categories={categories} onClose={() => setPanel(null)} />}
+    </div>
+  )
+}
+
+/** 토도 under the day's list, cheering on what's left. */
+function DayMascot({ todos, isToday }: { todos: { done: boolean }[]; isToday: boolean }) {
+  const left = todos.filter((t) => !t.done).length
+  const [mood, text]: [Mood, string] = !todos.length
+    ? ['sleep', isToday ? '오늘은 할 일이 없어요' : '이 날은 할 일이 없어요']
+    : !left
+      ? ['happy', isToday ? '오늘 할 일 끝! 최고야' : '다 끝냈어!']
+      : ['base', `${left}개 남았어!`]
+  return (
+    <div className="day-mascot">
+      <span className="speech">{text}</span>
+      <Mascot mood={mood} size={84} />
     </div>
   )
 }

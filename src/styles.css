@@ -571,3 +571,54 @@ input, select {
 .tpl-desc { width: 100%; min-height: 64px; margin: 0 0 8px; padding: 10px 12px; border: 0; border-radius: 10px; background: var(--surface); font: inherit; font-size: 14px; color: var(--text); resize: vertical; box-sizing: border-box; }
 .tpl-done { padding: 12px; border-radius: 12px; background: var(--surface); font-size: 14px; font-weight: 600; }
 .sheet .vis-options { margin: 4px 0 12px; }
+
+/* ---- 토도 (mascot) ---- */
+.mascot { display: block; color: var(--text); flex: none; }
+.day-mascot { display: flex; align-items: flex-end; justify-content: center; gap: 6px; margin: 20px 0 8px; opacity: 0.95; }
+.day-mascot .speech {
+  position: relative; padding: 8px 12px; border-radius: 14px; background: var(--surface);
+  font-size: 14px; color: var(--text); margin-bottom: 40px;
+}
+.day-mascot .speech::after {
+  content: ''; position: absolute; right: -6px; bottom: 10px;
+  border: 6px solid transparent; border-left-color: var(--surface); border-right: 0;
+}
+.pomo > .mascot { margin: 0 auto -4px; }
+
+.theme-picker { display: flex; align-items: center; gap: 8px; margin: 4px 0 12px; }
+.theme-label { color: var(--muted); font-size: 14px; margin-right: 4px; }
+.theme-opt {
+  display: flex; align-items: center; gap: 4px; padding: 4px 12px 4px 6px; border-radius: 999px;
+  border: 1.5px solid var(--line); background: var(--bg); color: var(--text); font-size: 14px; cursor: pointer;
+}
+.theme-opt.on { border-color: var(--accent); background: var(--surface); font-weight: 700; }
+.theme-opt.t-chalk { background: #575553; color: #f4f1ea; font-family: 'Gamja Flower', sans-serif; }
+.theme-opt.t-chalk .mascot { color: #f4f1ea; }
+
+/* ---- 칠판 테마 ---- */
+:root[data-theme='chalk'] {
+  --bg: #575553;
+  --surface: #64625f;
+  --text: #f4f1ea;
+  --muted: #c9c5bd;
+  --line: rgba(244, 241, 234, 0.22);
+  --accent: #ffe27a;
+  --danger: #ff9a9a;
+  --sun: #ffa8a8;
+  --sat: #a8c8ff;
+  color-scheme: dark;
+}
+:root[data-theme='chalk'] body {
+  font-family: 'Gamja Flower', 'Gaegu', sans-serif;
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(255, 255, 255, 0.05), transparent 60%),
+    repeating-linear-gradient(8deg, rgba(255, 255, 255, 0.015) 0 2px, transparent 2px 5px),
+    var(--bg);
+  background-attachment: fixed;
+}
+:root[data-theme='chalk'] h1 { font-weight: 400; }
+:root[data-theme='chalk'] .primary { color: #3d3b39; }
+:root[data-theme='chalk'] .mascot .ink { filter: url(#chalk); }
+:root[data-theme='chalk'] .check { border-style: dashed; }
+:root[data-theme='chalk'] .day-mascot .speech { border: 1.5px dashed var(--line); background: transparent; }
+:root[data-theme='chalk'] .day-mascot .speech::after { display: none; }
