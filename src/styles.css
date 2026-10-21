@@ -592,16 +592,16 @@ input, select {
   border: 1.5px solid var(--line); background: var(--bg); color: var(--text); font-size: 14px; cursor: pointer;
 }
 .theme-opt.on { border-color: var(--accent); background: var(--surface); font-weight: 700; }
-.theme-opt.t-chalk { background: #575553; color: #f4f1ea; font-family: 'Gamja Flower', sans-serif; }
+.theme-opt.t-chalk { background: #474644; color: #f4f1ea; font-family: 'Gamja Flower', sans-serif; }
 .theme-opt.t-chalk .mascot { color: #f4f1ea; }
 
 /* ---- 칠판 테마 ---- */
 :root[data-theme='chalk'] {
-  --bg: #575553;
-  --surface: #64625f;
-  --text: #f4f1ea;
-  --muted: #c9c5bd;
-  --line: rgba(244, 241, 234, 0.22);
+  --bg: #474644;
+  --surface: #575553;
+  --text: #fffdf6;
+  --muted: #e2ded5;
+  --line: rgba(255, 253, 246, 0.3);
   --accent: #ffe27a;
   --danger: #ff9a9a;
   --sun: #ffa8a8;
@@ -610,6 +610,9 @@ input, select {
 }
 :root[data-theme='chalk'] body {
   font-family: 'Gamja Flower', 'Gaegu', sans-serif;
+  /* the handwriting glyphs run about 20% smaller than system fonts; scale them back up */
+  font-size-adjust: ic-width 1.22;
+  -webkit-text-stroke: 0.35px currentColor;
   background:
     radial-gradient(ellipse at 30% 20%, rgba(255, 255, 255, 0.05), transparent 60%),
     repeating-linear-gradient(8deg, rgba(255, 255, 255, 0.015) 0 2px, transparent 2px 5px),
@@ -622,3 +625,8 @@ input, select {
 :root[data-theme='chalk'] .check { border-style: dashed; }
 :root[data-theme='chalk'] .day-mascot .speech { border: 1.5px dashed var(--line); background: transparent; }
 :root[data-theme='chalk'] .day-mascot .speech::after { display: none; }
+/* 토도 belongs to the chalk theme only */
+:root:not([data-theme='chalk']) .day-mascot,
+:root:not([data-theme='chalk']) .pomo > .mascot,
+.theme-opt.t-basic .mascot { display: none; }
+.theme-opt.t-basic { padding-left: 12px; }
