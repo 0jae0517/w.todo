@@ -2,7 +2,7 @@
   "id": "/",
   "name": "w.todo",
   "short_name": "w.todo",
-  "description": "광고 없는 할 일 · 루틴 · 뽀모도로 앱. 친구와 서로의 할 일을 응원해요.",
+  "description": "친구와 할 일을 공유하고, 다른 사람의 루틴을 가져오고, 나에게 맞는 집중 시간을 찾는 할 일 앱",
   "lang": "ko",
   "start_url": "/",
   "scope": "/",
