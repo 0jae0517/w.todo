@@ -177,6 +177,19 @@ export async function signOut() {
   clearTimer()
 }
 
+/**
+ * Deletes the account on the server (every row goes with it) and wipes this
+ * device. Other devices are signed out once their session can't refresh.
+ */
+export async function deleteAccount() {
+  while (running) await new Promise((r) => setTimeout(r, 100))
+  const { error } = await supabase!.rpc('delete_account')
+  if (error) throw new Error(error.message)
+  await supabase!.auth.signOut({ scope: 'local' })
+  resetLocal()
+  clearTimer()
+}
+
 export const currentUserId = () => state.session?.user.id ?? null
 
 export async function signInWithPassword(email: string, password: string) {

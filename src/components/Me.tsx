@@ -4,9 +4,10 @@ import { formatDuration } from '../pomodoro'
 import { listFollowers, listFollowing, useMyProfile } from '../social'
 import { useStore } from '../store'
 import { supabase } from '../supabase'
-import { signOut, syncNow, useSync } from '../sync'
+import { deleteAccount, signOut, syncNow, useSync } from '../sync'
+import { PRIVACY_URL } from '../native'
 import type { Category, Todo } from '../types'
-import { LoginPanel, PasswordForm, STATUS_LABEL } from './Account'
+import { DeleteAccount, LoginPanel, PasswordForm, STATUS_LABEL } from './Account'
 import FocusPattern from './FocusPattern'
 import { ProfileForm } from './Friends'
 import Heatmap from './Heatmap'
@@ -162,6 +163,10 @@ function Settings({ onSaved }: { onSaved: () => void }) {
         <button onClick={() => signOut()}>로그아웃</button>
       </div>
       <PasswordForm />
+      <DeleteAccount onDelete={deleteAccount} />
+      <a className="link privacy-link" href={PRIVACY_URL} target="_blank" rel="noopener">
+        개인정보처리방침
+      </a>
     </div>
   )
 }

@@ -16,6 +16,9 @@ const AUTH_CALLBACK = 'com.wtodo.app://auth'
 /** Redirect target for login flows: the page itself on the web, the app's own link scheme in the app. */
 export const authRedirect = () => (isNative ? AUTH_CALLBACK : location.origin + location.pathname)
 
+/** The privacy policy, a static page next to the app (opens in the browser from the app). */
+export const PRIVACY_URL = (isNative ? PUBLIC_URL : import.meta.env.BASE_URL) + 'privacy.html'
+
 /** Base for links shared with other people. */
 export const shareBase = () => (isNative ? PUBLIC_URL : location.origin + location.pathname)
 

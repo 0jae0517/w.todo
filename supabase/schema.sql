@@ -333,3 +333,19 @@ do $$ begin
   alter publication supabase_realtime add table public.courses;
 exception when duplicate_object then null;
 end $$;
+
+-- ============================================================
+-- 회원 탈퇴: 본인 계정을 지우면 위 표들이 on delete cascade 로 함께 지워짐
+-- (할 일, 카테고리, 반복, 집중 기록, 시간표, 프로필, 팔로우, 감정표현, 템플릿)
+-- ============================================================
+create or replace function public.delete_account() returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null then
+    raise exception 'not signed in';
+  end if;
+  delete from auth.users where id = auth.uid();
+end
+$$;
+revoke execute on function public.delete_account() from public, anon;
+grant execute on function public.delete_account() to authenticated;
