@@ -204,7 +204,11 @@ input, select {
 /* sheets */
 .backdrop {
   position: fixed;
-  inset: 0;
+  left: 0;
+  right: 0;
+  /* the visible area: shrinks above the iPhone keyboard (see viewport.ts) */
+  top: var(--vv-top, 0px);
+  height: var(--vv-height, 100dvh);
   background: rgba(0, 0, 0, 0.4);
   display: flex;
   align-items: flex-end;
@@ -215,8 +219,9 @@ input, select {
 .sheet {
   width: 100%;
   max-width: 560px;
-  max-height: 85dvh;
+  max-height: min(85dvh, calc(var(--vv-height, 100dvh) - 24px));
   overflow: auto;
+  overscroll-behavior: contain;
   background: var(--bg);
   border-radius: 18px 18px 0 0;
   padding: 8px 20px calc(24px + env(safe-area-inset-bottom));
@@ -756,3 +761,8 @@ input, select {
 .chev-inline svg { width: 14px; height: 14px; }
 .chev-inline.open { transform: rotate(180deg); }
 .pomo-controls > button:not(.primary) { display: grid; place-items: center; }
+
+/* iPhone zooms the page into any field under 16px; keep fields at 16px there */
+@supports (-webkit-touch-callout: none) {
+  input, select, textarea { font-size: 16px !important; }
+}

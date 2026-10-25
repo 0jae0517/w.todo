@@ -9,8 +9,10 @@ import '@fontsource/gaegu/700.css'
 import '@fontsource/gamja-flower/400.css'
 import './styles.css'
 import { applyTheme } from './theme'
+import { trackVisualViewport } from './viewport'
 
 applyTheme()
+trackVisualViewport()
 startSync()
 startTimerLoop()
 
