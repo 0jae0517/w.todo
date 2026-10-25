@@ -737,3 +737,12 @@ input, select {
 .theme-opt .mascot { width: 26px; height: 26px; margin-left: -6px; }
 
 .todo-repeat svg { width: 15px; height: 15px; vertical-align: 0; }
+
+/* one size for the small icons in the todo list (category lock/person, +, repeat, tomato) */
+:root { --icon-sm: 16px; }
+.lock { display: inline-flex; color: var(--c); }
+.lock svg, .group-add svg, .todo-repeat svg, .tomato svg {
+  width: var(--icon-sm); height: var(--icon-sm); stroke-width: 2.2; display: block;
+}
+.group-add { display: inline-flex; color: var(--text); opacity: 0.55; }
+.todo-repeat svg, .tomato svg { display: inline-block; vertical-align: -3px; }
