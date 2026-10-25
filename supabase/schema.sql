@@ -298,3 +298,38 @@ language sql security definer set search_path = public as $$
 $$;
 revoke execute on function public.use_template(uuid) from public, anon;
 grant execute on function public.use_template(uuid) to authenticated;
+
+-- ============================================================
+-- 시간표 (대학생용): 수업 하나가 한 줄, 학기 기간 동안 매주 반복
+-- ============================================================
+create table if not exists public.courses (
+  user_id    uuid not null default auth.uid() references auth.users on delete cascade,
+  id         text not null,
+  title      text not null,
+  room       text not null default '',
+  color      text not null,
+  slots      jsonb not null default '[]',   -- [{ day: 0~6 (0 = 일요일), start: "09:00", end: "10:15" }]
+  term_start date not null,
+  term_end   date not null,
+  deleted    boolean not null default false,
+  updated_at timestamptz not null,
+  synced_at  timestamptz not null default now(),
+  primary key (user_id, id)
+);
+
+create index if not exists courses_synced_idx on public.courses (user_id, synced_at);
+
+drop trigger if exists courses_touch on public.courses;
+create trigger courses_touch before insert or update on public.courses
+  for each row execute function public.touch_synced_at();
+
+-- 본인만 읽고 쓸 수 있음 (팔로워에게는 보이지 않음)
+alter table public.courses enable row level security;
+drop policy if exists "own courses" on public.courses;
+create policy "own courses" on public.courses for all
+  using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+do $$ begin
+  alter publication supabase_realtime add table public.courses;
+exception when duplicate_object then null;
+end $$;

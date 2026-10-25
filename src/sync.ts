@@ -29,7 +29,10 @@ export const useSync = () =>
     () => state,
   )
 
-const KINDS: Kind[] = ['categories', 'routines', 'todos', 'sessions']
+const KINDS: Kind[] = ['categories', 'routines', 'todos', 'sessions', 'courses']
+
+/** A table the server doesn't have yet (schema.sql not re-run): skip it instead of failing the whole sync. */
+const missingTable = (e: { code?: string }) => e.code === 'PGRST205' || e.code === '42P01'
 const PAGE = 1000
 
 let running = false
@@ -75,6 +78,7 @@ async function push(userId: string) {
       const { error } = await supabase!
         .from(kind)
         .upsert(batch.map((r) => ({ ...r, user_id: userId })), { onConflict: 'user_id,id', ignoreDuplicates: fresh })
+      if (error && missingTable(error)) break
       if (error) throw new Error(error.message)
       markPushed(kind, batch)
     }
@@ -89,6 +93,7 @@ async function pull(userId: string) {
       const cursor = getCursor(kind)
       if (cursor) q = q.gt('synced_at', cursor)
       const { data, error } = await q
+      if (error && missingTable(error)) break
       if (error) throw new Error(error.message)
       applyRemote(kind, data ?? [])
       if (!data || data.length < PAGE) break

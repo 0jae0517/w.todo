@@ -6,7 +6,17 @@ const HOURS = Array.from({ length: 12 }, (_, i) => String(i + 1))
 const MINUTES = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0'))
 
 /** iOS-style scroll wheels for 오전/오후 · hour · minute (5-minute steps). */
-export default function TimeWheel({ value, onDone, onClear }: { value: string | null; onDone: (hhmm: string) => void; onClear: () => void }) {
+export default function TimeWheel({
+  value,
+  onDone,
+  onClear,
+  clearLabel = '시간 없음',
+}: {
+  value: string | null
+  onDone: (hhmm: string) => void
+  onClear: () => void
+  clearLabel?: string
+}) {
   const [h, m] = (value ?? '09:00').split(':').map(Number)
   const [ampm, setAmpm] = useState(h < 12 ? 0 : 1)
   const [hour, setHour] = useState((h % 12 || 12) - 1)
@@ -26,7 +36,7 @@ export default function TimeWheel({ value, onDone, onClear }: { value: string | 
         <Wheel items={MINUTES} index={minute} onChange={setMinute} />
       </div>
       <div className="actions">
-        <button onClick={onClear}>시간 없음</button>
+        <button onClick={onClear}>{clearLabel}</button>
         <button className="primary" onClick={done}>확인</button>
       </div>
     </div>

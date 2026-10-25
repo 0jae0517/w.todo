@@ -61,6 +61,17 @@
 |---|---|
 | <img src="docs/screenshots/fold.png" width="260"> | <img src="docs/screenshots/todo-sheet.png" width="260"> |
 
+### 대학생 시간표
+- 내 정보 → "대학생 시간표"를 켜면 시간표 탭이 생김 (에브리타임처럼 주간 표)
+- 수업 이름, 강의실, 색상, 요일·시간 여러 개 입력 (예: 월·수 9:00~10:15)
+- 학기 기간 동안 매주 그날 수업이 할 일 화면 맨 위에 자동으로 표시, 공휴일엔 빠짐
+- 개강·종강일은 시간표 위쪽 학기 이름을 눌러 수정
+- 시간표는 나만 보기 (친구에게 공개되지 않음)
+
+| 시간표 | 할 일 화면의 수업 |
+|---|---|
+| <img src="docs/screenshots/timetable.png" width="260"> | <img src="docs/screenshots/timetable-day.png" width="260"> |
+
 ### 5. 기록 (내 정보)
 - 요약: 완료한 일, 이번 주 달성률, 총 집중 시간, 연속 달성일, 최근 7일
 - 잔디: 1년 활동 히트맵, 카테고리별로 보기
@@ -131,6 +142,7 @@ src/
   templates.ts   템플릿 만들기·공유·적용
   pomodoro.ts    타이머 (종료 시각 기준)
   theme.ts       테마 (기본 / 칠판)
+  timetable.ts   대학생 시간표 (학기 기간, 날짜별 수업)
   native.ts      안드로이드 전용 처리 (소셜 로그인 복귀, 뒤로 가기, 알림)
   holidays.ts    한국 공휴일
   components/    화면 컴포넌트 (달력, 할 일 목록, 잔디, 회고 카드, 캐릭터 등)

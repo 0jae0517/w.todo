@@ -630,3 +630,53 @@ input, select {
 :root:not([data-theme='chalk']) .pomo > .mascot,
 .theme-opt.t-basic .mascot { display: none; }
 .theme-opt.t-basic { padding-left: 12px; }
+
+/* ---- 시간표 ---- */
+.timetable { padding-bottom: 24px; }
+.tt-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 4px 0 12px; }
+.tt-term { background: none; padding: 0; font-weight: 700; font-size: 15px; color: var(--text); text-align: left; }
+.tt-term:disabled { color: var(--text); }
+.tt-add { padding: 8px 14px; border-radius: 99px; font-size: 14px; }
+.tt-grid { display: grid; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--bg); }
+.tt-day { text-align: center; font-size: 12px; color: var(--muted); padding: 6px 0; border-bottom: 1px solid var(--line); border-left: 1px solid var(--line); }
+.tt-day.today { color: var(--accent); font-weight: 700; }
+.tt-hours div { font-size: 10px; color: var(--muted); text-align: right; padding: 2px 4px 0 0; box-sizing: border-box; }
+.tt-col { position: relative; border-left: 1px solid var(--line); }
+.tt-line { position: absolute; left: 0; right: 0; border-top: 1px solid var(--line); }
+.tt-line:first-child { display: none; }
+.tt-block {
+  position: absolute; left: 1px; right: 1px; border-radius: 6px; padding: 4px 4px; overflow: hidden;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 1px; text-align: left; color: #fff; cursor: pointer;
+}
+.tt-block strong { font-size: 11px; line-height: 1.2; font-weight: 700; word-break: keep-all; }
+.tt-block span { font-size: 10px; opacity: 0.9; line-height: 1.2; }
+.tt-empty { text-align: center; margin-top: 16px; }
+
+.slot { padding: 12px; border-radius: 14px; background: var(--surface); margin-bottom: 8px; }
+.slot .repeat-days { margin-bottom: 10px; }
+.slot-times { display: flex; align-items: center; gap: 8px; }
+.slot-times .time-btn { flex: 1; }
+.slot .wheel-box { margin-top: 10px; }
+.slot-remove { background: none; color: var(--muted); padding: 4px 8px; font-size: 14px; }
+.link-btn { background: none; color: var(--accent); padding: 6px 0 14px; font-size: 14px; font-weight: 600; }
+.sheet-input.small { font-size: 15px; margin-bottom: 12px; }
+.sheet .swatches { display: flex; flex-wrap: wrap; gap: 10px; padding: 6px 2px 4px; }
+
+.day-classes { margin-bottom: 8px; }
+.day-classes ul { list-style: none; margin: 0; padding: 0; }
+.day-classes li button {
+  display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 2px; background: none; color: var(--text); text-align: left; font-size: 15px;
+}
+.day-classes li.over { opacity: 0.45; }
+.class-bar { width: 4px; align-self: stretch; border-radius: 2px; flex: none; }
+.class-time { color: var(--accent); font-weight: 600; font-size: 13px; white-space: nowrap; }
+.class-time small { font-weight: 400; color: var(--muted); }
+.class-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.class-room { font-size: 13px; white-space: nowrap; }
+.group-label { font-size: 13px; color: var(--muted); margin: 4px 0 2px; font-weight: 600; }
+.tt-toggle { display: flex; align-items: center; justify-content: space-between; margin: 0 0 12px; font-size: 14px; }
+.tt-toggle small { color: var(--muted); display: block; font-size: 12px; }
+.switch { width: 44px; height: 26px; border-radius: 99px; background: var(--line); position: relative; flex: none; padding: 0; }
+.switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: transform 0.15s; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+.switch.on { background: var(--accent); }
+.switch.on::after { transform: translateX(18px); }

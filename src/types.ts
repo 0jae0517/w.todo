@@ -60,11 +60,36 @@ export interface FocusSession {
   updated_at: string
 }
 
-export type Kind = 'todos' | 'categories' | 'routines' | 'sessions'
+/** One weekly meeting of a class. */
+export interface Slot {
+  /** weekday, 0 = Sunday */
+  day: number
+  /** HH:MM */
+  start: string
+  end: string
+}
+
+/** A class on the university timetable; it shows up on every matching day of its term. */
+export interface Course {
+  id: string
+  title: string
+  room: string
+  color: string
+  slots: Slot[]
+  /** first and last day of the semester (YYYY-MM-DD) */
+  term_start: string
+  term_end: string
+  deleted: boolean
+  updated_at: string
+}
+
+export type Kind = 'todos' | 'categories' | 'routines' | 'sessions' | 'courses'
 export type Row<K extends Kind> = K extends 'todos'
   ? Todo
   : K extends 'categories'
     ? Category
     : K extends 'routines'
       ? Routine
-      : FocusSession
+      : K extends 'sessions'
+        ? FocusSession
+        : Course

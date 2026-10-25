@@ -6,11 +6,12 @@ import DayList from './components/DayList'
 import FriendStrip from './components/FriendStrip'
 import FriendView from './components/FriendView'
 import Friends from './components/Friends'
-import { CheckIcon, CloudIcon, FriendsIcon, PersonIcon, PlusIcon, TimerIcon } from './components/Icons'
+import { CheckIcon, CloudIcon, FriendsIcon, PersonIcon, PlusIcon, TableIcon, TimerIcon } from './components/Icons'
 import Mascot, { ChalkFilter, type Mood } from './components/Mascot'
 import Me from './components/Me'
 import Pomodoro from './components/Pomodoro'
 import { TemplateView } from './components/Templates'
+import Timetable, { CourseSheet, DayClasses } from './components/Timetable'
 import TodoSheet from './components/TodoSheet'
 import { dayLabel, todayKey } from './date'
 import { holidayName } from './holidays'
@@ -18,14 +19,17 @@ import { startNative } from './native'
 import { useMyReactions, type Profile } from './social'
 import { useStore } from './store'
 import { currentUserId, useSync } from './sync'
+import { useTimetableOn } from './timetable'
 
-type Tab = 'todos' | 'timer' | 'friends' | 'me'
-type Panel = { kind: 'todo'; id: string } | { kind: 'categories' } | null
+type Tab = 'todos' | 'timetable' | 'timer' | 'friends' | 'me'
+type Panel = { kind: 'todo'; id: string } | { kind: 'course'; id: string } | { kind: 'categories' } | null
 
-const TITLES: Record<Tab, string> = { todos: 'w.todo', timer: '뽀모도로', friends: '친구', me: '내 정보' }
+const TITLES: Record<Tab, string> = { todos: 'w.todo', timetable: '시간표', timer: '뽀모도로', friends: '친구', me: '내 정보' }
 
 export default function App() {
-  const { categories, todos } = useStore()
+  const { categories, todos, courses } = useStore()
+  // 시간표 is for university students: shown once turned on, or once there are classes
+  const showTimetable = useTimetableOn() || courses.length > 0
   const { status } = useSync()
   const [tab, setTab] = useState<Tab>('todos')
   const [selected, setSelected] = useState(todayKey)
@@ -93,6 +97,7 @@ export default function App() {
             {dayLabel(selected)}
             {holidayName(selected) && <span className="holiday"> · {holidayName(selected)}</span>}
           </h2>
+            <DayClasses date={selected} onOpen={(c) => setPanel({ kind: 'course', id: c.id })} />
             <DayList
               date={selected}
               categories={categories}
@@ -105,6 +110,7 @@ export default function App() {
           </main>
         </>
       )}
+      {tab === 'timetable' && <Timetable />}
       {tab === 'timer' && <Pomodoro todos={todos} />}
       {tab === 'friends' && <Friends onLogin={() => setTab('me')} />}
       {tab === 'me' && <Me todos={todos} categories={categories} />}
@@ -113,6 +119,11 @@ export default function App() {
         <button className={tab === 'todos' ? 'on' : ''} onClick={() => setTab('todos')}>
           <CheckIcon />할 일
         </button>
+        {showTimetable && (
+          <button className={tab === 'timetable' ? 'on' : ''} onClick={() => setTab('timetable')}>
+            <TableIcon />시간표
+          </button>
+        )}
         <button className={tab === 'timer' ? 'on' : ''} onClick={() => setTab('timer')}>
           <TimerIcon />타이머
         </button>
@@ -138,6 +149,9 @@ export default function App() {
         />
       )}
       {templateId && <TemplateView id={templateId} onClose={() => setTemplateId(null)} />}
+      {panel?.kind === 'course' && courses.some((c) => c.id === panel.id) && (
+        <CourseSheet course={courses.find((c) => c.id === panel.id)} onClose={() => setPanel(null)} />
+      )}
       {panel?.kind === 'categories' && <CategorySheet categories={categories} onClose={() => setPanel(null)} />}
     </div>
   )

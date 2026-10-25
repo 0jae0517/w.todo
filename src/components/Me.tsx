@@ -14,6 +14,7 @@ import Recap, { lastMonthLabel, recapReady } from './Recap'
 import Sheet from './Sheet'
 import Mascot from './Mascot'
 import { setTheme, useTheme, type Theme } from '../theme'
+import { setTimetableOn, useTimetableOn } from '../timetable'
 
 type View = 'summary' | 'grass' | 'focus' | 'recap'
 const VIEWS: [View, string][] = [
@@ -53,6 +54,7 @@ export default function Me({ todos, categories }: { todos: Todo[]; categories: C
         </button>
       )}
       <ThemePicker />
+      <TimetableToggle />
       <div className="seg" role="tablist">
         {VIEWS.map(([v, label]) => (
           <button key={v} role="tab" aria-selected={view === v} className={view === v ? 'on' : ''} onClick={() => pick(v)}>
@@ -306,6 +308,22 @@ function ThemePicker() {
           {label}
         </button>
       ))}
+    </div>
+  )
+}
+
+function TimetableToggle() {
+  const on = useTimetableOn()
+  const { courses } = useStore()
+  // with classes saved the tab stays, so the switch would do nothing
+  if (courses.length) return null
+  return (
+    <div className="tt-toggle">
+      <span>
+        대학생 시간표
+        <small>수업을 넣으면 할 일 화면에 그날 수업이 보여요</small>
+      </span>
+      <button className={`switch ${on ? 'on' : ''}`} role="switch" aria-checked={on} aria-label="대학생 시간표" onClick={() => setTimetableOn(!on)} />
     </div>
   )
 }

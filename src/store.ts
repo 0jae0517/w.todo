@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import { addDays, fromKey, todayKey } from './date'
-import type { Category, FocusSession, Kind, Routine, Row, Todo, Visibility } from './types'
+import type { Category, Course, FocusSession, Kind, Routine, Row, Todo, Visibility } from './types'
 
 /**
  * Local-first store. Everything lives in localStorage so the app works offline
@@ -17,6 +17,7 @@ interface Persisted {
   todos: Record<string, Todo>
   routines: Record<string, Routine>
   sessions: Record<string, FocusSession>
+  courses: Record<string, Course>
   /** "todos:<id>" / "categories:<id>" keys not yet pushed to the server */
   dirty: string[]
   /** last server `synced_at` seen per table */
@@ -31,6 +32,7 @@ export interface State {
   routines: Routine[]
   /** oldest first */
   sessions: FocusSession[]
+  courses: Course[]
 }
 
 const now = () => new Date().toISOString()
@@ -44,7 +46,7 @@ const newId = () => crypto.randomUUID()
 
 function initial(): Persisted {
   const def: Category = { id: 'default', name: '할 일', color: PALETTE[0], visibility: 'followers', allowed_ids: [], private: false, position: 0, deleted: false, updated_at: UNTOUCHED }
-  return { categories: { default: def }, todos: {}, routines: {}, sessions: {}, dirty: ['categories:default'], cursor: {}, userId: null }
+  return { categories: { default: def }, todos: {}, routines: {}, sessions: {}, courses: {}, dirty: ['categories:default'], cursor: {}, userId: null }
 }
 
 function load(): Persisted {
@@ -90,6 +92,7 @@ function derive(): State {
     sessions: Object.values(db.sessions)
       .filter((s) => !s.deleted)
       .sort((a, b) => a.started_at.localeCompare(b.started_at)),
+    courses: Object.values(db.courses).filter((c) => !c.deleted),
   }
 }
 
@@ -360,6 +363,29 @@ export function addSession(started_at: string, seconds: number, todo_id: string 
   commit(true)
 }
 
+// ---- timetable ----
+
+/** Adds a class, or saves changes to one. */
+export function saveCourse(course: Omit<Course, 'id' | 'deleted' | 'updated_at'> & { id?: string }) {
+  const id = course.id ?? newId()
+  put('courses', { ...course, id, deleted: false, updated_at: now() })
+  commit(true)
+}
+
+export function deleteCourse(id: string) {
+  const cur = db.courses[id]
+  if (!cur) return
+  put('courses', { ...cur, deleted: true, updated_at: now() })
+  commit(true)
+}
+
+/** Moves every class to a new semester period. */
+export function setTerm(term_start: string, term_end: string) {
+  const t = now()
+  for (const c of snapshot.courses) put('courses', { ...c, term_start, term_end, updated_at: t })
+  commit(true)
+}
+
 // ---- sync support ----
 
 /** True when there are edits on this device the server hasn't received. */
@@ -375,7 +401,7 @@ export function resetLocal() {
 }
 
 export function pendingChanges() {
-  const out: { [K in Kind]: Row<K>[] } = { todos: [], categories: [], routines: [], sessions: [] }
+  const out: { [K in Kind]: Row<K>[] } = { todos: [], categories: [], routines: [], sessions: [], courses: [] }
   for (const key of dirty) {
     const i = key.indexOf(':')
     const kind = key.slice(0, i) as Kind
@@ -433,6 +459,6 @@ export function bindUser(userId: string) {
   db.userId = userId
   db.cursor = {}
   for (const id of Object.keys(db.categories)) dirty.add(`categories:${id}`)
-  for (const kind of ['todos', 'routines', 'sessions'] as const) for (const id of Object.keys(db[kind])) dirty.add(`${kind}:${id}`)
+  for (const kind of ['todos', 'routines', 'sessions', 'courses'] as const) for (const id of Object.keys(db[kind])) dirty.add(`${kind}:${id}`)
   commit(false)
 }
