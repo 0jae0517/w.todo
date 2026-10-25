@@ -2,10 +2,11 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { addDays, dayLabel, fromKey, todayKey, weekOf } from '../date'
 import type { Category, Todo } from '../types'
 
-const WEEKS = 53
+/** about three months, so each day is big enough to see and tap */
+const WEEKS = 13
 const ALL = 'all'
 
-/** GitHub-style year grid of finished todos, one column per week. */
+/** GitHub-style grid of finished todos over the last three months, one column per week. */
 export default function Heatmap({ todos, categories }: { todos: Todo[]; categories: Category[] }) {
   const [cat, setCat] = useState(ALL)
   const [picked, setPicked] = useState<string | null>(null)
@@ -66,7 +67,7 @@ export default function Heatmap({ todos, categories }: { todos: Todo[]; categori
         </div>
       </div>
       <p className="heat-info">
-        {picked ? `${dayLabel(picked)} · ${counts.get(picked) ?? 0}개 완료` : `최근 1년 동안 ${activeDays}일, ${total}개 완료`}
+        {picked ? `${dayLabel(picked)} · ${counts.get(picked) ?? 0}개 완료` : `최근 3달 동안 ${activeDays}일, ${total}개 완료`}
       </p>
     </div>
   )

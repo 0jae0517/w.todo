@@ -42,12 +42,12 @@ export default function FriendView({ friend, onBack }: { friend: Profile; onBack
     }
   }, [friend.id, from, to, isFollowing])
 
-  // a year of todos for the grass grid
+  // the last three months of todos for the grass grid
   const [year, setYear] = useState<Todo[]>([])
   useEffect(() => {
     if (!isFollowing) return setYear([])
     const today = todayKey()
-    friendData(friend.id, addDays(today, -7 * 53), today)
+    friendData(friend.id, addDays(today, -7 * 14), today)
       .then((d) => setYear(d.todos))
       .catch(() => {})
   }, [friend.id, isFollowing])
@@ -133,7 +133,7 @@ export default function FriendView({ friend, onBack }: { friend: Profile; onBack
           />
           {year.length > 0 && (
             <section className="card friend-heat">
-              <h3 className="sub-title">최근 1년</h3>
+              <h3 className="sub-title">최근 3달</h3>
               <Heatmap todos={year} categories={data.categories} />
             </section>
           )}
