@@ -159,6 +159,7 @@ export function updateTodo(id: string, patch: Partial<Omit<Todo, 'id'>>) {
   const next = { ...cur, ...patch, updated_at: t }
   // moving to another day puts it at the end of that day's list
   if (patch.date && patch.date !== cur.date && patch.position === undefined) next.position = Date.now()
+  else if (patch.time && patch.time !== cur.time && patch.position === undefined) next.position = positionForTime(cur, patch.time)
   put('todos', next)
   // renaming or re-timing a repeating todo carries over to its later days
   const routine = cur.routine_id ? db.routines[cur.routine_id] : undefined
@@ -174,6 +175,29 @@ export function updateTodo(id: string, patch: Partial<Omit<Todo, 'id'>>) {
 }
 
 export const deleteTodo = (id: string) => updateTodo(id, { deleted: true })
+
+/** Saves a new order for one category's todos on one day (ids in display order). */
+export function reorderTodos(ids: string[]) {
+  const t = now()
+  ids.forEach((id, i) => {
+    const cur = db.todos[id]
+    const position = (i + 1) * 1024
+    if (cur && cur.position !== position) put('todos', { ...cur, position, updated_at: t })
+  })
+  commit(true)
+}
+
+/**
+ * Where a todo given `time` goes among its day's list: before the first one
+ * that is later or has no time. The list order is manual after that.
+ */
+function positionForTime(todo: Todo, time: string) {
+  const list = snapshot.todos.filter((o) => o.date === todo.date && o.category_id === todo.category_id && o.id !== todo.id)
+  const i = list.findIndex((o) => !o.time || o.time > time)
+  if (i < 0) return list.length ? list[list.length - 1].position + 1024 : todo.position
+  const prev = i > 0 ? list[i - 1].position : list[i].position - 2048
+  return (prev + list[i].position) / 2
+}
 
 // ---- categories ----
 

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { EMOJIS, type Reaction } from '../social'
+import { CloseIcon, SmilePlusIcon } from './Icons'
 
 interface Props {
   list: Reaction[]
@@ -30,7 +31,7 @@ export default function ReactionBar({ list, myId, onPick }: Props) {
       ))}
       {onPick && (
         <button className="chip add" onClick={() => setOpen(!open)} aria-label="감정표현">
-          {open ? '×' : '☺︎+'}
+          {open ? <CloseIcon /> : <SmilePlusIcon />}
         </button>
       )}
       {open && onPick && (

@@ -16,6 +16,7 @@ import {
   type TemplateItem,
 } from '../templates'
 import type { Category } from '../types'
+import { CheckMarkIcon, GlobeIcon, LinkIcon, PlusIcon, RepeatIcon } from './Icons'
 import Sheet from './Sheet'
 import { repeatLabel } from './TodoSheet'
 
@@ -29,7 +30,14 @@ function ItemList({ items }: { items: TemplateItem[] }) {
         <li key={i}>
           <span className="tpl-item-title">{it.title}</span>
           <span className="muted">
-            {[it.time && timeLabel(it.time), it.days.length ? `🔁 ${repeatLabel(it.days)}` : '한 번'].filter(Boolean).join(' · ')}
+            {it.time && `${timeLabel(it.time)} · `}
+            {it.days.length ? (
+              <>
+                <RepeatIcon /> {repeatLabel(it.days)}
+              </>
+            ) : (
+              '한 번'
+            )}
           </span>
         </li>
       ))}
@@ -132,7 +140,16 @@ export function TemplateMaker({ category, onClose }: { category: Category; onClo
                   }}
                 />
                 {it.title}
-                <span className="muted"> {[it.time && timeLabel(it.time), it.days.length ? `🔁 ${repeatLabel(it.days)}` : ''].filter(Boolean).join(' · ')}</span>
+                <span className="muted">
+                  {' '}
+                  {it.time && timeLabel(it.time)}
+                  {it.time && it.days.length > 0 && ' · '}
+                  {it.days.length > 0 && (
+                    <>
+                      <RepeatIcon /> {repeatLabel(it.days)}
+                    </>
+                  )}
+                </span>
               </label>
             </li>
           )
@@ -148,15 +165,17 @@ export function TemplateMaker({ category, onClose }: { category: Category; onClo
       </ul>
       <div className="cat-add">
         <input placeholder="항목 직접 추가" value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && !e.nativeEvent.isComposing && addExtra()} />
-        <button onClick={addExtra}>추가</button>
+        <button className="icon-add" onClick={addExtra} aria-label="항목 추가" title="항목 추가">
+          <PlusIcon />
+        </button>
       </div>
 
       <div className="vis-options">
         <button className={listed ? 'on' : ''} onClick={() => setListedState(true)}>
-          🌐 목록에 공개
+          <GlobeIcon /> 목록에 공개
         </button>
         <button className={!listed ? 'on' : ''} onClick={() => setListedState(false)}>
-          🔗 링크로만
+          <LinkIcon /> 링크로만
         </button>
       </div>
       {err && <p className="error">{err}</p>}
@@ -222,7 +241,7 @@ export function TemplateView({ id, onClose, onChanged }: { id: string; onClose: 
 
       {done ? (
         <p className="tpl-done">
-          ✓ {target === NEW ? `'${t.title}' 카테고리에` : '고른 카테고리에'} 추가했어요.
+          <CheckMarkIcon /> {target === NEW ? `'${t.title}' 카테고리에` : '고른 카테고리에'} 추가했어요.
           {repeating && ` 반복 할 일은 ${dayLabel(date)}부터 시작돼요.`}
         </p>
       ) : (
@@ -309,7 +328,7 @@ export function TemplateGallery() {
         <strong>{t.title}</strong>
         <span className="muted">
           {t.owner ? `@${t.owner.username} · ` : ''}
-          {t.items.length}개 · {t.uses}명이 가져감{!t.listed && ' · 🔗 링크로만'}
+          {t.items.length}개 · {t.uses}명이 가져감{!t.listed && ' · 링크로만'}
         </span>
         {t.description && <span className="tpl-card-desc">{t.description}</span>}
       </button>
@@ -318,7 +337,7 @@ export function TemplateGallery() {
 
   return (
     <div className="templates">
-      <p className="sheet-sub">다른 사람의 루틴을 가져오거나, 카테고리 관리(오른쪽 위 +)에서 📤를 눌러 내 루틴을 공유할 수 있어요.</p>
+      <p className="sheet-sub">다른 사람의 루틴을 가져오거나, 카테고리 관리(오른쪽 위 +)에서 공유 버튼을 눌러 내 루틴을 공유할 수 있어요.</p>
       <input className="search" placeholder="템플릿 검색" value={q} onChange={(e) => setQ(e.target.value)} />
       {err && <p className="error">{err}</p>}
       {mine.length > 0 && !q && (

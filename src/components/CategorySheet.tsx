@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { listFollowers, type Profile } from '../social'
 import { PALETTE, addCategory, deleteCategory, setVisibility, updateCategory } from '../store'
 import { useSync } from '../sync'
 import type { Category, Visibility } from '../types'
+import { FriendsIcon, LockIcon, PersonIcon, PlusIcon, ShareIcon, TrashIcon } from './Icons'
 import Sheet from './Sheet'
 import { TemplateMaker } from './Templates'
 
@@ -21,7 +22,6 @@ export default function CategorySheet({ categories, onClose }: { categories: Cat
 
   return (
     <Sheet title="카테고리 관리" onClose={onClose}>
-      <p className="sheet-sub">👥 팔로워 공개 · 👤 일부 공개 · 🔒 나만 보기 · 📤 템플릿으로 공유</p>
       <p className="sheet-sub">순서는 할 일 화면에서 카테고리 이름을 길게 눌러 끌면 바뀌어요.</p>
       <ul className="cat-list">
         {categories.map((c) => (
@@ -40,23 +40,26 @@ export default function CategorySheet({ categories, onClose }: { categories: Cat
                   if (v && v !== c.name) updateCategory(c.id, { name: v })
                 }}
               />
-              <button
-                className="icon-btn vis"
-                onClick={() => setVisFor(visFor === c.id ? null : c.id)}
-                aria-label={`공개 범위: ${VIS[c.visibility].label}`}
-                title={VIS[c.visibility].label}
-              >
-                {VIS[c.visibility].icon}
+              <button className="icon-btn" onClick={() => setSharing(c)} aria-label="템플릿으로 공유" title="템플릿으로 공유">
+                <ShareIcon />
               </button>
-              <button className="icon-btn" onClick={() => setSharing(c)} aria-label="템플릿으로 공유" title="템플릿으로 공유">📤</button>
               <button
                 className="icon-btn"
                 onClick={() => confirm(`'${c.name}' 카테고리와 그 안의 할 일을 모두 삭제할까요?`) && deleteCategory(c.id)}
                 aria-label="삭제"
+                title="삭제"
               >
-                🗑
+                <TrashIcon />
               </button>
             </div>
+            <button className={`vis-chip ${visFor === c.id ? 'open' : ''}`} onClick={() => setVisFor(visFor === c.id ? null : c.id)} aria-expanded={visFor === c.id}>
+              {VIS[c.visibility].icon}
+              {VIS[c.visibility].label}
+              {c.visibility === 'selected' && ` · ${c.allowed_ids.length}명`}
+              <svg className="chev" viewBox="0 0 16 16" aria-hidden="true">
+                <path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
             {visFor === c.id && <VisibilityPanel category={c} />}
             {picking === c.id && (
               <div className="palette">
@@ -85,16 +88,18 @@ export default function CategorySheet({ categories, onClose }: { categories: Cat
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && !e.nativeEvent.isComposing && add()}
         />
-        <button className="primary" onClick={add}>추가</button>
+        <button className="primary icon-add" onClick={add} aria-label="카테고리 추가" title="카테고리 추가" disabled={!name.trim()}>
+          <PlusIcon />
+        </button>
       </div>
     </Sheet>
   )
 }
 
-const VIS: Record<Visibility, { icon: string; label: string }> = {
-  followers: { icon: '👥', label: '팔로워 공개' },
-  selected: { icon: '👤', label: '일부 공개' },
-  private: { icon: '🔒', label: '나만 보기' },
+const VIS: Record<Visibility, { icon: ReactNode; label: string }> = {
+  followers: { icon: <FriendsIcon />, label: '팔로워 공개' },
+  selected: { icon: <PersonIcon />, label: '일부 공개' },
+  private: { icon: <LockIcon />, label: '나만 보기' },
 }
 
 function VisibilityPanel({ category }: { category: Category }) {

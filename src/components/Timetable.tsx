@@ -3,6 +3,7 @@ import { WEEKDAYS, timeLabel, todayKey } from '../date'
 import { PALETTE, deleteCourse, saveCourse, setTerm, useStore } from '../store'
 import { classesOn, currentTerm, termLabel, toMinutes, type ClassOnDay } from '../timetable'
 import type { Course, Slot } from '../types'
+import { CloseIcon, PencilIcon } from './Icons'
 import Sheet from './Sheet'
 import TimeWheel from './TimeWheel'
 
@@ -30,7 +31,7 @@ export default function Timetable() {
       <div className="tt-head">
         <button className="tt-term" onClick={() => courses.length && setTermOpen(true)} disabled={!courses.length}>
           {termLabel(term)}
-          {courses.length > 0 && <span className="muted"> ✎</span>}
+          {courses.length > 0 && <PencilIcon />}
         </button>
         <button className="primary tt-add" onClick={() => setEditing('new')}>+ 수업 추가</button>
       </div>
@@ -146,7 +147,9 @@ export function CourseSheet({ course, onClose }: { course?: Course; onClose: () 
             <span>~</span>
             <button className="time-btn" onClick={() => setPicking({ i, edge: 'end' })}>{timeLabel(s.end)}</button>
             {slots.length > 1 && (
-              <button className="slot-remove" onClick={() => setSlots(slots.filter((_, j) => j !== i))} aria-label="이 시간 빼기">✕</button>
+              <button className="slot-remove" onClick={() => setSlots(slots.filter((_, j) => j !== i))} aria-label="이 시간 빼기">
+                <CloseIcon />
+              </button>
             )}
           </div>
           {s.start >= s.end && <p className="error">끝나는 시간이 시작보다 늦어야 해요</p>}

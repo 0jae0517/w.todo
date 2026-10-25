@@ -6,6 +6,7 @@ import type { Reaction } from '../social'
 import type { Category, Todo } from '../types'
 import Sheet from './Sheet'
 import TimeWheel from './TimeWheel'
+import { TomatoIcon } from './Icons'
 
 interface Props {
   todo: Todo
@@ -44,8 +45,13 @@ export default function TodoSheet({ todo, categories, reactions, onClose, onFocu
       />
       <p className="sheet-sub">
         {dayLabel(todo.date)}
-        {todo.focus_seconds > 0 && ` · 🍅 ${todo.pomodoros}회, 총 ${formatDuration(todo.focus_seconds)} 집중`}
-        {routine && repeatStreak(routine.id) > 0 && ` · 🔁 ${repeatStreak(routine.id)}일 연속`}
+        {todo.focus_seconds > 0 && (
+          <>
+            {' · '}
+            <TomatoIcon /> {todo.pomodoros}회, 총 {formatDuration(todo.focus_seconds)} 집중
+          </>
+        )}
+        {routine && repeatStreak(routine.id) > 0 && ` · ${repeatStreak(routine.id)}일 연속 달성`}
       </p>
       {reactions.length > 0 && (
         <ul className="who-reacted">
@@ -66,7 +72,7 @@ export default function TodoSheet({ todo, categories, reactions, onClose, onFocu
             onFocus()
           }}
         >
-          🍅 뽀모도로 시작
+          <TomatoIcon /> 뽀모도로 시작
         </button>
       )}
       <div className="actions">

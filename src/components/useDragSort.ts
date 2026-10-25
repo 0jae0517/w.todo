@@ -23,7 +23,9 @@ export function useDragSort(ids: string[], onDrop: (ids: string[]) => void) {
     const startY = e.clientY
     const rects = ids.map((x) => refs.current.get(x)!.getBoundingClientRect())
     const mids = rects.map((r) => r.top + r.height / 2)
-    const height = rects[from].height + 14 // block + its bottom margin
+    // distance to the neighbouring block, so gaps between blocks are kept
+    const height =
+      from < rects.length - 1 ? rects[from + 1].top - rects[from].top : from > 0 ? rects[from].bottom - rects[from - 1].bottom : rects[from].height
     let active = false
     let to = from
     const isMouse = e.pointerType === 'mouse'

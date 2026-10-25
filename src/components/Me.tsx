@@ -15,6 +15,7 @@ import Sheet from './Sheet'
 import Mascot from './Mascot'
 import { setTheme, useTheme, type Theme } from '../theme'
 import { setTimetableOn, useTimetableOn } from '../timetable'
+import { PersonIcon, SparkleIcon, TomatoIcon } from './Icons'
 
 type View = 'summary' | 'grass' | 'focus' | 'recap'
 const VIEWS: [View, string][] = [
@@ -49,7 +50,9 @@ export default function Me({ todos, categories }: { todos: Todo[]; categories: C
       <AccountRow />
       {ready && view !== 'recap' && (
         <button className="recap-open fresh" onClick={() => pick('recap')}>
-          <span>🎉 {lastMonthLabel()} 회고가 준비됐어요</span>
+          <span>
+            <SparkleIcon /> {lastMonthLabel()} 회고가 준비됐어요
+          </span>
           <span>›</span>
         </button>
       )}
@@ -102,7 +105,7 @@ function AccountRow() {
   return (
     <>
       <button className="account-row" onClick={() => setOpen(true)}>
-        <span className="avatar big">{profile ? name.slice(0, 1).toUpperCase() : '👤'}</span>
+        <span className="avatar big">{profile ? name.slice(0, 1).toUpperCase() : <PersonIcon />}</span>
         <span className="profile-text">
           <strong>{name}</strong>
           {profile ? (
@@ -220,7 +223,7 @@ function Summary({ todos, categories }: { todos: Todo[]; categories: Category[] 
         {r.recent.map((d) => (
           <li key={d.key}>
             <span>{dateLabel(d.key)}</span>
-            <span className="muted">{d.focus ? `🍅 ${formatDuration(d.focus)}` : ''}</span>
+            <span className="muted">{d.focus > 0 && <Focus seconds={d.focus} />}</span>
             <span>{d.total ? `${d.done} / ${d.total}` : '-'}</span>
           </li>
         ))}
@@ -249,7 +252,7 @@ function PerCategory({ todos, categories }: { todos: Todo[]; categories: Categor
         {perCat.map(({ cat, done, total, focus }) => (
           <li key={cat.id}>
             <span style={{ color: cat.color, fontWeight: 700 }}>{cat.name}</span>
-            <span className="muted">{focus ? `🍅 ${formatDuration(focus)}` : ''}</span>
+            <span className="muted">{focus > 0 && <Focus seconds={focus} />}</span>
             <span>{done} / {total}</span>
           </li>
         ))}
@@ -276,7 +279,9 @@ function TopFocus({ todos }: { todos: Todo[] }) {
           <li key={t.id}>
             <span className="ellipsis">{t.title}</span>
             <span className="muted">{dateLabel(t.date)}</span>
-            <span>🍅 {formatDuration(t.focus_seconds)}</span>
+            <span>
+              <Focus seconds={t.focus_seconds} />
+            </span>
           </li>
         ))}
       </ul>
@@ -327,3 +332,9 @@ function TimetableToggle() {
     </div>
   )
 }
+
+const Focus = ({ seconds }: { seconds: number }) => (
+  <span className="focus-time">
+    <TomatoIcon /> {formatDuration(seconds)}
+  </span>
+)

@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { timeLabel } from '../date'
 import { formatDuration } from '../pomodoro'
 import type { Reaction } from '../social'
-import { addTodo, reorderCategories, updateTodo } from '../store'
+import { addTodo, reorderCategories, reorderTodos, updateTodo } from '../store'
 import type { Category, Todo } from '../types'
+import { CheckMarkIcon, LockIcon, MoreIcon, PersonIcon, PlusIcon, RepeatIcon, TomatoIcon } from './Icons'
 import ReactionBar from './ReactionBar'
 import { useDragSort } from './useDragSort'
 
@@ -75,7 +76,7 @@ export default function DayList({ date, categories, todos, reactions, myId, onOp
   return (
     <div className="day-list">
       {groups.map((cat) => {
-        const items = (cat === ORPHAN ? orphans : todos.filter((t) => t.category_id === cat.id)).sort(byTime)
+        const items = (cat === ORPHAN ? orphans : todos.filter((t) => t.category_id === cat.id)).sort(byPosition)
         const c = { '--c': cat.color } as React.CSSProperties
         const key = cat.id || 'orphan'
         const isFolded = folded.has(key) && adding !== cat.id
@@ -102,15 +103,19 @@ export default function DayList({ date, categories, todos, reactions, myId, onOp
                 <span className="group-name">{cat.name}</span>
                 {cat.visibility === 'private' && (
                   <span className="lock" title="나만 보기">
-                    🔒
+                    <LockIcon />
                   </span>
                 )}
                 {cat.visibility === 'selected' && (
                   <span className="lock" title="일부 공개">
-                    👤
+                    <PersonIcon />
                   </span>
                 )}
-                {editable && cat !== ORPHAN && <span className="group-add">+</span>}
+                {editable && cat !== ORPHAN && (
+                  <span className="group-add">
+                    <PlusIcon />
+                  </span>
+                )}
               </button>
               {items.length > 0 && (
                 <button className="fold" onClick={() => toggle(key)} aria-expanded={!isFolded} aria-label={isFolded ? '펼치기' : '접기'}>
@@ -126,47 +131,17 @@ export default function DayList({ date, categories, todos, reactions, myId, onOp
               )}
             </div>
             {!isFolded && (
-              <ul>
-                {items.map((t) => (
-                  <li key={t.id} className={`todo ${t.done ? 'done' : ''}`}>
-                    <div className="todo-row">
-                      <button
-                        className="check"
-                        style={c}
-                        disabled={!editable}
-                        onClick={() => updateTodo(t.id, { done: !t.done })}
-                        aria-label={t.done ? '완료 취소' : '완료'}
-                      >
-                        {t.done && '✓'}
-                      </button>
-                      <span className="todo-title" onClick={() => onOpenTodo?.(t.id)}>
-                        {t.time && <span className="todo-time">{timeLabel(t.time)}</span>}
-                        {t.routine_id && (
-                          <span className="todo-repeat" title="반복">
-                            🔁
-                          </span>
-                        )}
-                        <span className="todo-text">{t.title}</span>
-                        {t.focus_seconds > 0 && <span className="tomato"> 🍅 {formatDuration(t.focus_seconds)}</span>}
-                      </span>
-                      {editable && (
-                        <button className="more" onClick={() => onOpenTodo(t.id)} aria-label="더보기">
-                          ⋯
-                        </button>
-                      )}
-                    </div>
-                    {t.done && <ReactionBar list={reactions?.get(t.id) ?? []} myId={myId} onPick={onReact && ((e) => onReact(t.id, e))} />}
-                  </li>
-                ))}
-                {adding === cat.id && (
-                  <li className="todo">
-                    <div className="todo-row">
-                      <span className="check" style={c} />
-                      <NewTodoInput onSubmit={(title) => addTodo(title, date, cat.id)} onDone={() => setAdding(null)} />
-                    </div>
-                  </li>
-                )}
-              </ul>
+              <TodoItems
+                items={items}
+                color={c}
+                editable={editable}
+                reactions={reactions}
+                myId={myId}
+                onOpenTodo={onOpenTodo}
+                onReact={onReact}
+                adding={adding === cat.id ? (title) => addTodo(title, date, cat.id) : null}
+                onAddDone={() => setAdding(null)}
+              />
             )}
           </section>
         )
@@ -175,11 +150,80 @@ export default function DayList({ date, categories, todos, reactions, myId, onOp
   )
 }
 
-/** timed todos first, in time order; the rest keep their manual order */
-function byTime(a: Todo, b: Todo) {
-  if (a.time && b.time) return a.time.localeCompare(b.time) || a.position - b.position
-  if (a.time || b.time) return a.time ? -1 : 1
-  return a.position - b.position
+/** manual order (a todo given a time is first slotted in by time, see updateTodo) */
+const byPosition = (a: Todo, b: Todo) => a.position - b.position || (a.time ?? '~').localeCompare(b.time ?? '~')
+
+interface ItemsProps {
+  items: Todo[]
+  color: React.CSSProperties
+  editable: boolean
+  reactions?: Map<string, Reaction[]>
+  myId?: string | null
+  onOpenTodo?: (id: string) => void
+  onReact?: (todoId: string, emoji: string | null) => void
+  /** set while the new-todo input is open in this category */
+  adding: ((title: string) => void) | null
+  onAddDone: () => void
+}
+
+/** One category's todos; in my own list they can be dragged into a new order. */
+function TodoItems({ items, color: c, editable, reactions, myId, onOpenTodo, onReact, adding, onAddDone }: ItemsProps) {
+  const dnd = useDragSort(editable ? items.map((t) => t.id) : [], reorderTodos)
+  // a tap that ends a drag shouldn't also tick or open the todo
+  const tap = (fn: () => void) => () => !dnd.justDragged.current && fn()
+  return (
+    <ul>
+      {items.map((t) => (
+        <li
+          key={t.id}
+          ref={editable ? dnd.register(t.id) : undefined}
+          className={`todo ${t.done ? 'done' : ''} ${dnd.dragging === t.id ? 'dragging' : ''}`}
+          style={dnd.styleFor(t.id)}
+        >
+          <div className="todo-row" onPointerDown={editable ? dnd.start(t.id) : undefined} onContextMenu={(e) => editable && e.preventDefault()}>
+            <button
+              className="check"
+              style={c}
+              disabled={!editable}
+              onClick={tap(() => updateTodo(t.id, { done: !t.done }))}
+              aria-label={t.done ? '완료 취소' : '완료'}
+            >
+              {t.done && <CheckMarkIcon />}
+            </button>
+            <span className="todo-title" onClick={tap(() => onOpenTodo?.(t.id))}>
+              {t.time && <span className="todo-time">{timeLabel(t.time)}</span>}
+              {t.routine_id && (
+                <span className="todo-repeat" title="반복">
+                  <RepeatIcon />
+                </span>
+              )}
+              <span className="todo-text">{t.title}</span>
+              {t.focus_seconds > 0 && (
+                <span className="tomato">
+                  {' '}
+                  <TomatoIcon /> {formatDuration(t.focus_seconds)}
+                </span>
+              )}
+            </span>
+            {editable && (
+              <button className="more" onClick={tap(() => onOpenTodo?.(t.id))} aria-label="더보기">
+                <MoreIcon />
+              </button>
+            )}
+          </div>
+          {t.done && <ReactionBar list={reactions?.get(t.id) ?? []} myId={myId} onPick={onReact && ((e) => onReact(t.id, e))} />}
+        </li>
+      ))}
+      {adding && (
+        <li className="todo">
+          <div className="todo-row">
+            <span className="check" style={c} />
+            <NewTodoInput onSubmit={adding} onDone={onAddDone} />
+          </div>
+        </li>
+      )}
+    </ul>
+  )
 }
 
 function NewTodoInput({ onSubmit, onDone }: { onSubmit: (title: string) => void; onDone: () => void }) {

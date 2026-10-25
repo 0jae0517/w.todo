@@ -3,6 +3,7 @@ import { todayKey } from '../date'
 import { PHASE_LABEL, formatDuration, pause, phaseLength, reset, setSettings, setTodo, skip, start, timeLeft, useTimer, type Settings } from '../pomodoro'
 import type { Todo } from '../types'
 import Mascot from './Mascot'
+import { TomatoIcon } from './Icons'
 
 const fmt = (ms: number) => {
   const s = Math.ceil(ms / 1000)
@@ -38,7 +39,7 @@ export default function Pomodoro({ todos }: { todos: Todo[] }) {
     <div className="pomo">
       <h2 className="pomo-task">{current ? current.title : '집중할 일을 골라 주세요'}</h2>
       {current && current.focus_seconds > 0 && (
-        <p className="pomo-total">지금까지 {formatDuration(current.focus_seconds)} 집중 · 🍅 {current.pomodoros}</p>
+        <p className="pomo-total">지금까지 {formatDuration(current.focus_seconds)} 집중 · <TomatoIcon /> {current.pomodoros}</p>
       )}
       <Mascot mood={!running ? 'base' : t.phase === 'focus' ? 'focus' : 'sleep'} size={76} />
       <div className="pomo-phases">
