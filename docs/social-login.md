@@ -23,7 +23,7 @@ https://aprhenfljolcaglrtwtp.supabase.co/auth/v1/callback
    - **대상(Audience)** 화면에서 **앱 게시(Publish app)** 를 눌러 "프로덕션"으로 바꿔 주세요. 테스트 상태로 두면 등록한 테스트 사용자만 로그인돼요.
 3. **사용자 인증 정보(클라이언트) → 사용자 인증 정보 만들기 → OAuth 클라이언트 ID**
    - 애플리케이션 유형: **웹 애플리케이션**
-   - 승인된 자바스크립트 원본: `https://w-todo-seven.vercel.app`
+   - 승인된 자바스크립트 원본: `https://wtodo.net`, `https://w-todo-seven.vercel.app` (예전 주소도 계속 열리니 둘 다)
    - 승인된 리디렉션 URI: 위의 콜백 URL
    - 만들기 → **클라이언트 ID**와 **클라이언트 보안 비밀번호**를 복사해 둬요.
 4. Supabase 대시보드 → **Authentication → Sign In / Providers → Google**
@@ -35,7 +35,7 @@ https://aprhenfljolcaglrtwtp.supabase.co/auth/v1/callback
 1. https://developers.kakao.com 에 카카오 계정으로 로그인 → **내 애플리케이션 → 애플리케이션 추가하기**
    - 앱 이름: `할 일`, 회사명: 본인 이름 → 저장
 2. 만든 앱 → **앱 키**에서 **REST API 키**를 복사해 둬요.
-3. **플랫폼 → Web 플랫폼 등록** → 사이트 도메인에 `https://w-todo-seven.vercel.app` 추가
+3. **플랫폼 → Web 플랫폼 등록** → 사이트 도메인에 `https://wtodo.net`, `https://w-todo-seven.vercel.app` 추가
 4. **카카오 로그인** 메뉴
    - 활성화 설정: **ON**
    - Redirect URI 등록: 위의 콜백 URL
@@ -49,9 +49,21 @@ https://aprhenfljolcaglrtwtp.supabase.co/auth/v1/callback
    - Client Secret 칸에 5번의 코드 → Save
    - 이메일 동의항목을 못 켰다면, 같은 화면의 **Allow users without an email** 을 켜 주세요.
 
-## 3. 확인
+## 3. 주소(도메인)를 바꿀 때
 
-https://w-todo-seven.vercel.app → 오른쪽 위 구름 아이콘 → **Google로 계속하기** / **카카오로 계속하기**
+2026-10-25에 `wtodo.net`을 연결했어요. 예전 주소 `https://w-todo-seven.vercel.app`도 계속 열려요. 주소를 새로 추가하면 아래 세 곳에 모두 넣어야 로그인이 돼요.
+
+1. Supabase → **Authentication → URL Configuration**
+   - Site URL: `https://wtodo.net`
+   - Redirect URLs: `https://wtodo.net`, `https://w-todo-seven.vercel.app` (예전 주소는 지우지 않기)
+2. 구글 클라우드 콘솔 → OAuth 클라이언트 → **승인된 자바스크립트 원본**에 새 주소 추가
+3. 카카오 디벨로퍼스 → **플랫폼 → Web → 사이트 도메인**에 새 주소 추가
+
+콜백 URL(Supabase 주소)은 바뀌지 않으니 그대로 두면 돼요.
+
+## 4. 확인
+
+https://wtodo.net → 오른쪽 위 구름 아이콘 → **Google로 계속하기** / **카카오로 계속하기**
 로그인 후 구름 아이콘 옆 점이 초록색이면 동기화되는 중이에요.
 
 > 휴대폰에서는 카카오톡이나 Gmail 안에서 열지 말고 Chrome(또는 Safari)에서 직접 주소를 열어 주세요. 구글은 앱 안의 브라우저에서 로그인을 막아요.
