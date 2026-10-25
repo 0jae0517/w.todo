@@ -2,10 +2,11 @@ import { useState } from 'react'
 import { timeLabel } from '../date'
 import { formatDuration } from '../pomodoro'
 import type { Reaction } from '../social'
-import { addTodo, reorderCategories, reorderTodos, updateTodo } from '../store'
+import { addTodo, reorderCategories, reorderTodos, updateTodo, useStore } from '../store'
 import type { Category, Todo } from '../types'
 import { CheckMarkIcon, LockIcon, MoreIcon, PersonIcon, PlusIcon, RepeatIcon, TomatoIcon } from './Icons'
 import ReactionBar from './ReactionBar'
+import { repeatLabel } from './TodoSheet'
 import { useDragSort } from './useDragSort'
 
 interface Props {
@@ -151,6 +152,12 @@ export default function DayList({ date, categories, todos, reactions, myId, onOp
 }
 
 /** manual order (a todo given a time is first slotted in by time, see updateTodo) */
+/** "매일", "평일", "월·수·금", "매주 월" */
+function shortRepeat(days: number[]) {
+  const label = repeatLabel(days)
+  return label.endsWith('요일마다') ? `매주 ${label.replace('요일마다', '')}` : label
+}
+
 const byPosition = (a: Todo, b: Todo) => a.position - b.position || (a.time ?? '~').localeCompare(b.time ?? '~')
 
 interface ItemsProps {
@@ -169,6 +176,9 @@ interface ItemsProps {
 /** One category's todos; in my own list they can be dragged into a new order. */
 function TodoItems({ items, color: c, editable, reactions, myId, onOpenTodo, onReact, adding, onAddDone }: ItemsProps) {
   const dnd = useDragSort(editable ? items.map((t) => t.id) : [], reorderTodos)
+  // my own routines; a friend's list shows just the icon
+  const { routines } = useStore()
+  const repeatDays = new Map(editable ? routines.map((r) => [r.id, r.days] as const) : [])
   // a tap that ends a drag shouldn't also tick or open the todo
   const tap = (fn: () => void) => () => !dnd.justDragged.current && fn()
   return (
@@ -195,6 +205,7 @@ function TodoItems({ items, color: c, editable, reactions, myId, onOpenTodo, onR
               {t.routine_id && (
                 <span className="todo-repeat" title="반복">
                   <RepeatIcon />
+                  {repeatDays.get(t.routine_id) && <span>{shortRepeat(repeatDays.get(t.routine_id)!)}</span>}
                 </span>
               )}
               <span className="todo-text">{t.title}</span>

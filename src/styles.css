@@ -479,7 +479,7 @@ input, select {
 .people li .person { flex: 1; min-width: 0; }
 
 /* repeat */
-.todo-repeat { font-size: 11px; margin-right: 4px; }
+.todo-repeat { display: inline-flex; align-items: center; gap: 2px; font-size: 12px; font-weight: 600; margin-right: 6px; vertical-align: -1px; white-space: nowrap; }
 .repeat-box { margin: -6px 0 16px; padding: 12px; border-radius: 14px; background: var(--surface); }
 .repeat-presets, .repeat-days { display: flex; gap: 6px; margin-bottom: 8px; }
 .repeat-presets button { flex: 1; padding: 8px 0; border-radius: 10px; background: var(--bg); font-size: 14px; }
@@ -735,3 +735,5 @@ input, select {
 /* both theme buttons the same size */
 .theme-opt, .theme-opt.t-basic { height: 36px; min-width: 88px; padding: 0 14px; justify-content: center; gap: 4px; font-size: 14px; box-sizing: border-box; }
 .theme-opt .mascot { width: 26px; height: 26px; margin-left: -6px; }
+
+.todo-repeat svg { width: 15px; height: 15px; vertical-align: 0; }
