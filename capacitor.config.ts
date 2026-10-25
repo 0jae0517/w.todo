@@ -8,7 +8,7 @@ const config: CapacitorConfig = {
   plugins: {
     LocalNotifications: {
       smallIcon: 'ic_stat_wtodo',
-      iconColor: '#4f7cff',
+      iconColor: '#5e6ad2',
     },
   },
 }

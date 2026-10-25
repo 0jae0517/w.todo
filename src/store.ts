@@ -10,7 +10,9 @@ import type { Category, Course, FocusSession, Kind, Routine, Row, Todo, Visibili
 
 const KEY = 'todo-app:v1'
 
-export const PALETTE = ['#4f7cff', '#ff6b6b', '#ffb020', '#2fbf71', '#a066ff', '#ff7ac6', '#17b5c4', '#8a8f98']
+/** The app's blue was #4f7cff until 2026-10; categories saved with it show the new blue. */
+export const shownColor = (c: string) => (c.toLowerCase() === '#4f7cff' ? PALETTE[0] : c)
+export const PALETTE = ['#5e6ad2', '#ff6b6b', '#ffb020', '#2fbf71', '#a066ff', '#ff7ac6', '#17b5c4', '#8a8f98']
 
 interface Persisted {
   categories: Record<string, Category>
@@ -84,6 +86,7 @@ function derive(): State {
   return {
     categories: Object.values(db.categories)
       .filter((c) => !c.deleted)
+      .map((c) => (c.color === shownColor(c.color) ? c : { ...c, color: shownColor(c.color) }))
       .sort((a, b) => a.position - b.position),
     todos: Object.values(db.todos)
       .filter((t) => !t.deleted)

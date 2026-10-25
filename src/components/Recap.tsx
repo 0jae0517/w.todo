@@ -131,7 +131,7 @@ export default function Recap({ todos, categories }: { todos: Todo[]; categories
 
 function draw(c: HTMLCanvasElement, s: RecapStats) {
   const g = c.getContext('2d')!
-  const accent = s.topCategory?.cat.color ?? '#4f7cff'
+  const accent = s.topCategory?.cat.color ?? '#5e6ad2'
 
   const bg = g.createLinearGradient(0, 0, W, H)
   bg.addColorStop(0, '#111827')

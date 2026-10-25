@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from './supabase'
+import { shownColor } from './store'
 import { currentUserId, useSync } from './sync'
 import type { Category, Todo } from './types'
 
@@ -117,7 +118,7 @@ export async function friendData(ownerId: string, from: string, to: string) {
     db().from('categories').select('*').eq('user_id', ownerId).order('position'),
     db().from('todos').select('*').eq('user_id', ownerId).gte('date', from).lte('date', to).order('position'),
   ])
-  return { categories: check(cats) as Category[], todos: check(todos) as Todo[] }
+  return { categories: (check(cats) as Category[]).map((c) => ({ ...c, color: shownColor(c.color) })), todos: check(todos) as Todo[] }
 }
 
 // ---- reactions ----

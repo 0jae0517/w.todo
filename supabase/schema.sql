@@ -264,7 +264,7 @@ create table if not exists public.templates (
   owner_id    uuid not null default auth.uid() references public.profiles on delete cascade,
   title       text not null check (char_length(title) between 1 and 60),
   description text not null default '' check (char_length(description) <= 500),
-  color       text not null default '#4f7cff' check (color ~ '^#[0-9a-fA-F]{6}$'),
+  color       text not null default '#5e6ad2' check (color ~ '^#[0-9a-fA-F]{6}$'),
   -- [{ "title": "...", "time": "07:00" | null, "days": [1,2,3] }], days 가 비어 있으면 한 번만 하는 일
   items       jsonb not null check (jsonb_typeof(items) = 'array' and jsonb_array_length(items) between 1 and 50),
   listed      boolean not null default true,  -- true: 템플릿 목록에 공개, false: 링크를 아는 사람만
