@@ -541,6 +541,15 @@ input, select {
 .seg button.on { background: var(--bg); color: var(--text); font-weight: 700; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); }
 .card > .sub-title:first-child, .card .pattern:first-child { margin-top: 0; }
 .settings .login { margin-bottom: 4px; }
+.settings > .link { display: block; margin: 14px 0 0; background: none; padding: 0; text-decoration: none; }
+.settings > .danger-link { color: var(--danger); margin-top: 22px; }
+.delete-box { margin-top: 22px; padding: 12px; border-radius: 12px; background: var(--surface); }
+.delete-box .sheet-sub { margin-top: 0; }
+.delete-box .actions { margin-bottom: 0; }
+.delete-box .actions > button { flex: 1; background: var(--bg); }
+.delete-box .actions > .danger { width: auto; color: #fff; background: var(--danger); }
+.legal-note { font-size: 12px; margin-top: 14px; }
+.legal-note a { color: inherit; text-decoration: underline; }
 
 /* friend strip on the todo tab */
 .friend-strip { display: flex; gap: 12px; overflow-x: auto; padding: 4px 16px 10px; scrollbar-width: none; }

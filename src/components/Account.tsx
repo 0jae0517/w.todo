@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { PRIVACY_URL } from '../native'
 import { sendLoginLink, setPassword, signInWithPassword, signInWithProvider, signUp, type SyncStatus } from '../sync'
 
 export const STATUS_LABEL: Record<SyncStatus, string> = {
@@ -87,6 +88,13 @@ export function LoginPanel() {
         {msg && <p className="sheet-sub">{msg}</p>}
         {err && <p className="error">{err}</p>}
       </form>
+      <p className="sheet-sub legal-note">
+        가입하면{' '}
+        <a href={PRIVACY_URL} target="_blank" rel="noopener">
+          개인정보처리방침
+        </a>
+        에 동의하는 것으로 봐요. 만 14세 미만은 가입할 수 없어요.
+      </p>
     </div>
   )
 }
@@ -118,6 +126,48 @@ export function PasswordForm() {
       <button className="primary" disabled={busy}>저장</button>
       {msg && <p className="sheet-sub">{msg}</p>}
     </form>
+  )
+}
+
+/** Account deletion behind a second step, since it can't be undone. */
+export function DeleteAccount({ onDelete }: { onDelete: () => Promise<void> }) {
+  const [open, setOpen] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+  if (!open)
+    return (
+      <button className="link danger-link" onClick={() => setOpen(true)}>
+        회원 탈퇴
+      </button>
+    )
+  return (
+    <div className="delete-box">
+      <p className="sheet-sub">
+        탈퇴하면 할 일, 카테고리, 집중 기록, 시간표, 프로필, 팔로우, 감정표현, 내가 만든 템플릿이 서버와 이 기기에서 바로 지워져요. 되돌릴 수 없어요.
+      </p>
+      <div className="actions">
+        <button onClick={() => setOpen(false)} disabled={busy}>
+          취소
+        </button>
+        <button
+          className="danger"
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true)
+            setErr(null)
+            try {
+              await onDelete()
+            } catch (e) {
+              setErr(errText(e))
+              setBusy(false)
+            }
+          }}
+        >
+          {busy ? '지우는 중…' : '탈퇴하기'}
+        </button>
+      </div>
+      {err && <p className="error">{err}</p>}
+    </div>
   )
 }
 
