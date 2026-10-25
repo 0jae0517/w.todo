@@ -41,27 +41,29 @@
 - 집중 패턴: 요일×시간대별로 언제 가장 많이 집중했는지 표시 (예: "일요일 오후 12시~3시에 가장 많이 집중했어요")
 - 가장 오래 집중한 일, 카테고리별 집중 시간
 - 집중 / 짧은 휴식 / 긴 휴식 시간 직접 설정, 새로고침해도 타이머 유지
-- 안드로이드 앱에서는 앱을 꺼 둬도 종료 알림
 
 | 뽀모도로 | 집중 패턴 |
 |---|---|
 | <img src="docs/screenshots/timer.png" width="260"> | <img src="docs/screenshots/me-focus.png" width="260"> |
 
 ### 4. 할 일 관리
-- 월간 달력이 첫 화면, 날짜마다 남은 할 일 수 표시 (다 끝내면 ✓)
+- 월간 달력이 첫 화면, 오른쪽 `주 | 월` 버튼으로 주간 보기 전환
+- 날짜마다 남은 할 일 수 표시 (다 끝내면 체크)
 - 한국 공휴일 표시: 일요일·공휴일 빨강, 토요일 파랑
-- 카테고리별 색상, 드래그로 순서 변경
+- 카테고리별 색상, 카테고리 이름을 길게 눌러 끌면 순서 변경
+- 카테고리 안의 할 일도 길게 눌러 끌면 순서 변경 (시간을 정하면 시간 순서 자리로 먼저 들어감)
 - 카테고리 접기: 접으면 `완료/전체` 개수만 표시 (예: 1/2)
 - 완료한 일은 줄긋기
 - 할 일마다 시간 지정 (다이얼식 선택기)
-- 반복 할 일: 매일·평일·주말·요일 선택, 제목·시간을 바꾸면 이후 반복분에도 반영
+- 반복 할 일: 매일·평일·주말·요일 선택, 목록에 반복 요일 표시 (예: 평일, 월·수·금)
+- 반복 할 일의 제목·시간을 바꾸면 이후 반복분에도 반영
 - 내일 하기 / 날짜 바꾸기
 
 | 카테고리 접기 | 할 일 상세 |
 |---|---|
 | <img src="docs/screenshots/fold.png" width="260"> | <img src="docs/screenshots/todo-sheet.png" width="260"> |
 
-### 대학생 시간표
+### 5. 대학생 시간표
 - 내 정보 → "대학생 시간표"를 켜면 시간표 탭이 생김 (에브리타임처럼 주간 표)
 - 수업 이름, 강의실, 색상, 요일·시간 여러 개 입력 (예: 월·수 9:00~10:15)
 - 학기 기간 동안 매주 그날 수업이 할 일 화면 맨 위에 자동으로 표시, 공휴일엔 빠짐
@@ -72,7 +74,7 @@
 |---|---|
 | <img src="docs/screenshots/timetable.png" width="260"> | <img src="docs/screenshots/timetable-day.png" width="260"> |
 
-### 5. 기록 (내 정보)
+### 6. 기록 (내 정보)
 - 요약: 완료한 일, 이번 주 달성률, 총 집중 시간, 연속 달성일, 최근 7일
 - 잔디: 활동 히트맵 (3달씩 보이고 옆으로 넘겨 1년까지), 카테고리별로 보기
 - 집중: 요일×시간대별 집중 패턴, 가장 오래 집중한 일
@@ -82,8 +84,9 @@
 |---|---|---|---|
 | <img src="docs/screenshots/me-summary.png" width="190"> | <img src="docs/screenshots/me-grass.png" width="190"> | <img src="docs/screenshots/me-focus.png" width="190"> | <img src="docs/screenshots/me-recap.png" width="190"> |
 
-### 6. 테마
-- 기본 테마 (시스템 다크 모드 자동 지원)
+### 7. 테마
+- 기본 테마 (시스템 다크 모드 자동 지원), 대표 색 `#5E6AD2`
+- 아이콘은 모두 SVG 선 아이콘 (어떤 휴대폰에서도 같은 모양)
 - 칠판 테마: 남색 칠판 배경, 손글씨 폰트, 분필 질감의 캐릭터 "토도"
   - 토도가 남은 할 일 수를 말풍선으로 알려 줌 (할 일 없음: 잠, 다 끝냄: 만세)
   - 뽀모도로 중엔 머리띠를 두르고 집중
@@ -93,7 +96,7 @@
 |---|---|
 | <img src="docs/screenshots/chalk-home.png" width="260"> | <img src="docs/screenshots/chalk-timer.png" width="260"> |
 
-### 7. 계정·동기화
+### 8. 계정·동기화
 - 로그인 없이도 이 기기에 저장 (오프라인 우선)
 - 로그인 방법: 이메일 링크, 이메일+비밀번호, 구글, 카카오
 - 로그인하면 기기 간 자동 동기화 (실시간, 마지막 수정 우선)
@@ -104,7 +107,6 @@
 - 백엔드: Supabase
   - 인증, Postgres, Realtime
   - 모든 테이블에 행 단위 보안(RLS) 적용
-- 안드로이드: Capacitor 8 (웹 코드를 그대로 감싸는 방식)
 - 외부 UI·달력 라이브러리 없이 직접 구현
 
 ## 실행
@@ -121,17 +123,12 @@ npm run build      # 타입 검사 + 빌드 (dist/)
 3. `.env.example`을 참고해 `.env.local` 작성
    - `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
 4. Authentication → URL Configuration의 Redirect URLs에 앱 주소 추가
-   - 예: `http://localhost:5173`, 배포 주소, `com.wtodo.app://**` (안드로이드)
+   - 예: `http://localhost:5173`, 배포 주소
 - 소셜 로그인 설정: [docs/social-login.md](docs/social-login.md)
 
 ## 배포
 - Vercel에 GitHub 저장소 연결 → `main`에 푸시하면 자동 배포
 - 배포 설정에 환경 변수 두 개 (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`) 추가
-
-## 안드로이드 앱
-- 앱 ID: `com.wtodo.app`
-- Android Studio에서 빌드: `npm run android`
-- 자세한 방법과 플레이스토어 등록 절차: [docs/android.md](docs/android.md)
 
 ## 폴더 구조
 ```
@@ -143,14 +140,13 @@ src/
   pomodoro.ts    타이머 (종료 시각 기준)
   theme.ts       테마 (기본 / 칠판)
   timetable.ts   대학생 시간표 (학기 기간, 날짜별 수업)
-  native.ts      안드로이드 전용 처리 (소셜 로그인 복귀, 뒤로 가기, 알림)
   holidays.ts    한국 공휴일
+  viewport.ts    아이폰 키보드가 올라올 때 아래 창 위치 맞추기
   components/    화면 컴포넌트 (달력, 할 일 목록, 잔디, 회고 카드, 캐릭터 등)
 supabase/schema.sql  테이블, 권한 규칙(RLS), 함수
-android/             Capacitor 안드로이드 프로젝트
 docs/                설정 안내서, 스크린샷
 ```
 
 ## 앞으로 할 일
-- 안드로이드 플레이스토어 출시 (개인정보처리방침, 앱 내 계정 삭제, 비공개 테스트)
-- 아이폰 앱, 애플 로그인
+- 친구와 시간표 공유, 공강 시간 보기
+- 개인정보처리방침 페이지, 앱 안에서 계정 삭제
