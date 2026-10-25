@@ -6,7 +6,8 @@
 - **루틴 가져오기**: 다른 사람이 공유한 실용적인 루틴을 템플릿으로 받아 내 할 일에 바로 추가
 - **나에게 맞는 집중 시간 찾기**: 뽀모도로 기록으로 내가 언제, 얼마나 잘 집중하는지 확인
 - 휴대폰·컴퓨터 어디서든 같은 할 일 (실시간 동기화, 홈 화면에 추가하는 웹 앱)
-- 배포 주소: https://w-todo-seven.vercel.app
+- 주소: https://wtodo.net (예전 주소 https://w-todo-seven.vercel.app 도 계속 열려요)
+- 개인정보처리방침: https://wtodo.net/privacy.html
 
 <p>
   <img src="docs/screenshots/friend.png" width="240" alt="친구 할 일 보기">
@@ -101,6 +102,8 @@
 - 로그인 방법: 이메일 링크, 이메일+비밀번호, 구글, 카카오
 - 로그인하면 기기 간 자동 동기화 (실시간, 마지막 수정 우선)
 - 로그아웃 시 동기화를 마친 뒤 기기에 남은 데이터 삭제
+- 회원 탈퇴: 내 정보 → 계정 → 회원 탈퇴. 확인 후 서버의 모든 데이터(할 일, 카테고리, 반복, 집중 기록, 시간표, 프로필, 팔로우, 감정표현, 템플릿)와 기기 데이터를 바로 삭제 (`delete_account()` 함수, 표마다 on delete cascade)
+- 개인정보처리방침: `public/privacy.html` (로그인 화면과 계정 화면에서 링크). 책임자·연락처(wtodo.official@gmail.com)·국외 이전(Supabase 호주 시드니, Vercel) 내용 포함
 
 ## 기술 구성
 - 프론트엔드: React 19, TypeScript, Vite, PWA (manifest + service worker)
@@ -120,15 +123,19 @@ npm run build      # 타입 검사 + 빌드 (dist/)
 1. https://supabase.com 에서 프로젝트 생성
 2. SQL Editor에 `supabase/schema.sql` 전체를 붙여넣고 실행
    - 여러 번 실행해도 안전, 스키마가 바뀌면 전체 재실행
+   - 실행 뒤에도 앱에서 "Could not find the function ... in the schema cache" 오류가 나면 SQL Editor에서 `notify pgrst, 'reload schema';` 실행
 3. `.env.example`을 참고해 `.env.local` 작성
    - `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
 4. Authentication → URL Configuration의 Redirect URLs에 앱 주소 추가
-   - 예: `http://localhost:5173`, 배포 주소
+   - Site URL: `https://wtodo.net`
+   - Redirect URLs: `https://wtodo.net`, `https://w-todo-seven.vercel.app`, `http://localhost:5173`, 안드로이드 앱용 `com.wtodo.app://**`
 - 소셜 로그인 설정: [docs/social-login.md](docs/social-login.md)
 
 ## 배포
 - Vercel에 GitHub 저장소 연결 → `main`에 푸시하면 자동 배포
 - 배포 설정에 환경 변수 두 개 (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`) 추가
+- 도메인: `wtodo.net` (Vercel에서 구입, www 없이 사용). 예전 `w-todo-seven.vercel.app` 도 그대로 유지
+- 도메인을 바꾸면 Supabase URL Configuration, 구글 승인된 자바스크립트 원본, 카카오 Web 사이트 도메인에 새 주소 추가 ([docs/social-login.md](docs/social-login.md))
 
 ## 폴더 구조
 ```
@@ -149,4 +156,3 @@ docs/                설정 안내서, 스크린샷
 
 ## 앞으로 할 일
 - 친구와 시간표 공유, 공강 시간 보기
-- 개인정보처리방침 페이지, 앱 안에서 계정 삭제

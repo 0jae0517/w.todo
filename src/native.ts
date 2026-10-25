@@ -8,7 +8,7 @@ import { supabase } from './supabase'
 export const isNative = Capacitor.isNativePlatform()
 
 /** The web address, used for links people open elsewhere (the app itself runs at https://localhost). */
-export const PUBLIC_URL = 'https://w-todo-seven.vercel.app/'
+export const PUBLIC_URL = 'https://wtodo.net/'
 
 /** Where Supabase sends the app back after a social or email login. Must be in Supabase's Redirect URLs. */
 const AUTH_CALLBACK = 'com.wtodo.app://auth'
