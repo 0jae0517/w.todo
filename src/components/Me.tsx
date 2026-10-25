@@ -15,7 +15,7 @@ import Sheet from './Sheet'
 import Mascot from './Mascot'
 import { setTheme, useTheme, type Theme } from '../theme'
 import { setTimetableOn, useTimetableOn } from '../timetable'
-import { PersonIcon, SparkleIcon, TomatoIcon } from './Icons'
+import { ChevronRightIcon, PersonIcon, SparkleIcon, TomatoIcon } from './Icons'
 
 type View = 'summary' | 'grass' | 'focus' | 'recap'
 const VIEWS: [View, string][] = [
@@ -53,7 +53,7 @@ export default function Me({ todos, categories }: { todos: Todo[]; categories: C
           <span>
             <SparkleIcon /> {lastMonthLabel()} 회고가 준비됐어요
           </span>
-          <span>›</span>
+          <ChevronRightIcon />
         </button>
       )}
       <ThemePicker />
@@ -122,7 +122,9 @@ function AccountRow() {
           )}
         </span>
         {session && <span className={`dot s-${status}`} title={STATUS_LABEL[status]} />}
-        <span className="muted">›</span>
+        <span className="muted chevron">
+          <ChevronRightIcon />
+        </span>
       </button>
       {open && (
         <Sheet onClose={() => setOpen(false)}>

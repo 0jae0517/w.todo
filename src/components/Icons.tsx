@@ -64,3 +64,18 @@ export const CheckMarkIcon = () => (
 export const MoreIcon = () => (
   <svg {...base}><path d="M6 12h.01M12 12h.01M18 12h.01" strokeWidth={3} /></svg>
 )
+export const ChevronLeftIcon = () => (
+  <svg {...base}><path d="M15 5l-7 7 7 7" /></svg>
+)
+export const ChevronRightIcon = () => (
+  <svg {...base}><path d="M9 5l7 7-7 7" /></svg>
+)
+export const ChevronDownIcon = () => (
+  <svg {...base}><path d="M6 9l6 6 6-6" /></svg>
+)
+export const ResetIcon = () => (
+  <svg {...base}><path d="M4 12a8 8 0 108-8 8.5 8.5 0 00-6 2.5L4 8.5" /><path d="M4 4v4.5h4.5" /></svg>
+)
+export const SkipIcon = () => (
+  <svg {...base}><path d="M5.5 5.5l9 6.5-9 6.5z" /><path d="M18.5 5.5v13" /></svg>
+)

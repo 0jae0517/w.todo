@@ -746,3 +746,13 @@ input, select {
 }
 .group-add { display: inline-flex; color: var(--text); opacity: 0.55; }
 .todo-repeat svg, .tomato svg { display: inline-block; vertical-align: -3px; }
+
+/* SVG chevrons and controls (text glyphs turn into emoji on iPhone) */
+.cal-head .icon-btn svg, .friend-head .icon-btn svg { width: 20px; height: 20px; }
+.account-row .chevron, .recap-open > svg { display: inline-flex; }
+.account-row .chevron svg, .recap-open > svg { width: 18px; height: 18px; }
+.pomo-controls button svg { width: 22px; height: 22px; display: block; }
+.chev-inline { display: inline-flex; vertical-align: -2px; transition: transform 0.15s; }
+.chev-inline svg { width: 14px; height: 14px; }
+.chev-inline.open { transform: rotate(180deg); }
+.pomo-controls > button:not(.primary) { display: grid; place-items: center; }

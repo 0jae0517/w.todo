@@ -3,7 +3,7 @@ import { todayKey } from '../date'
 import { PHASE_LABEL, formatDuration, pause, phaseLength, reset, setSettings, setTodo, skip, start, timeLeft, useTimer, type Settings } from '../pomodoro'
 import type { Todo } from '../types'
 import Mascot from './Mascot'
-import { TomatoIcon } from './Icons'
+import { ChevronDownIcon, ResetIcon, SkipIcon, TomatoIcon } from './Icons'
 
 const fmt = (ms: number) => {
   const s = Math.ceil(ms / 1000)
@@ -60,9 +60,13 @@ export default function Pomodoro({ todos }: { todos: Todo[] }) {
       </div>
 
       <div className="pomo-controls">
-        <button onClick={reset} aria-label="처음부터">↺</button>
+        <button onClick={reset} aria-label="처음부터">
+          <ResetIcon />
+        </button>
         <button className="primary big" onClick={running ? pause : start}>{running ? '일시정지' : '시작'}</button>
-        <button onClick={skip} aria-label="건너뛰기">⏭</button>
+        <button onClick={skip} aria-label="건너뛰기">
+          <SkipIcon />
+        </button>
       </div>
 
       <label className="field">
@@ -77,7 +81,8 @@ export default function Pomodoro({ todos }: { todos: Todo[] }) {
 
       <p className="sheet-sub">오늘 집중 {t.history[today] ?? 0}회</p>
 
-      <button className="link" onClick={() => setEditing(!editing)}>시간 설정 {editing ? '▴' : '▾'}</button>
+      <button className="link" onClick={() => setEditing(!editing)}>시간 설정 <span className={`chev-inline ${editing ? 'open' : ''}`}><ChevronDownIcon /></span>
+      </button>
       {editing && (
         <div className="pomo-settings">
           {([['focus', '집중(분)'], ['short', '짧은 휴식(분)'], ['long', '긴 휴식(분)'], ['longEvery', '긴 휴식 간격(회)']] as [keyof Settings, string][]).map(([k, label]) => (

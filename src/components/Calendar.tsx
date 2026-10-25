@@ -1,6 +1,6 @@
 import { holidayName } from '../holidays'
 import { WEEKDAYS, addDays, addMonths, fromKey, monthGrid, monthLabel, todayKey, weekOf } from '../date'
-import { CheckMarkIcon } from './Icons'
+import { CheckMarkIcon, ChevronLeftIcon, ChevronRightIcon } from './Icons'
 
 export interface DayStat {
   total: number
@@ -24,9 +24,13 @@ export default function Calendar({ selected, onSelect, mode, onModeChange, stats
   return (
     <section className="calendar">
       <div className="cal-head">
-        <button className="icon-btn" onClick={() => step(-1)} aria-label="이전">‹</button>
+        <button className="icon-btn" onClick={() => step(-1)} aria-label="이전">
+          <ChevronLeftIcon />
+        </button>
         <span className="cal-title">{monthLabel(selected)}</span>
-        <button className="icon-btn" onClick={() => step(1)} aria-label="다음">›</button>
+        <button className="icon-btn" onClick={() => step(1)} aria-label="다음">
+          <ChevronRightIcon />
+        </button>
         <span className="cal-tools">
           {selected !== today && (
             <button className="pill" onClick={() => onSelect(today)}>오늘</button>

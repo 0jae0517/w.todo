@@ -7,6 +7,7 @@ import type { Category, Todo } from '../types'
 import Calendar, { type DayStat } from './Calendar'
 import DayList from './DayList'
 import Heatmap from './Heatmap'
+import { ChevronLeftIcon } from './Icons'
 
 export const FOLLOW_LABEL = { following: '팔로잉', requested: '요청됨', none: '팔로우' }
 
@@ -100,7 +101,9 @@ export default function FriendView({ friend, onBack }: { friend: Profile; onBack
   return (
     <div className="friend-view">
       <div className="friend-head">
-        {onBack && <button className="icon-btn" onClick={onBack} aria-label="뒤로">‹</button>}
+        {onBack && <button className="icon-btn" onClick={onBack} aria-label="뒤로">
+            <ChevronLeftIcon />
+          </button>}
         <div className="friend-name">
           <strong>{friend.name || friend.username}</strong>
           <span className="handle">@{friend.username}</span>
