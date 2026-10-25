@@ -57,8 +57,7 @@ export function termLabel(term: { term_start: string; term_end: string }) {
   const y = term.term_start.slice(0, 4)
   const m = Number(term.term_start.slice(5, 7))
   const name = m >= 2 && m <= 5 ? '1학기' : m >= 8 && m <= 10 ? '2학기' : m >= 6 && m <= 7 ? '여름학기' : '겨울학기'
-  const md = (k: string) => `${Number(k.slice(5, 7))}/${Number(k.slice(8, 10))}`
-  return `${y}년 ${name} · ${md(term.term_start)}~${md(term.term_end)}`
+  return `${y}년 ${name}`
 }
 
 // ---- classes on a given day ----

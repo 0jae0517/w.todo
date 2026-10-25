@@ -55,7 +55,6 @@ export default function CategorySheet({ categories, onClose }: { categories: Cat
             <button className={`vis-chip ${visFor === c.id ? 'open' : ''}`} onClick={() => setVisFor(visFor === c.id ? null : c.id)} aria-expanded={visFor === c.id}>
               {VIS[c.visibility].icon}
               {VIS[c.visibility].label}
-              {c.visibility === 'selected' && ` · ${c.allowed_ids.length}명`}
               <svg className="chev" viewBox="0 0 16 16" aria-hidden="true">
                 <path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
@@ -83,7 +82,7 @@ export default function CategorySheet({ categories, onClose }: { categories: Cat
       <div className="cat-add">
         <input
           autoFocus
-          placeholder="새 카테고리 이름 (예: 운동, 공부)"
+          placeholder="새 카테고리 추가"
           value={name}
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && !e.nativeEvent.isComposing && add()}

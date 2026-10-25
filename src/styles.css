@@ -93,7 +93,6 @@ input, select {
 .dot.s-error { background: var(--danger); }
 
 .pill {
-  margin-left: auto;
   font-size: 13px;
   padding: 5px 12px;
   border-radius: 99px;
@@ -104,7 +103,6 @@ input, select {
 .calendar { padding-bottom: 8px; border-bottom: 1px solid var(--line); }
 .cal-head { display: flex; align-items: center; gap: 2px; margin-bottom: 6px; }
 .cal-title { font-weight: 700; font-size: 16px; padding: 6px 4px; }
-.caret { font-size: 11px; color: var(--muted); }
 
 .cal-grid {
   display: grid;
@@ -723,3 +721,14 @@ input, select {
 .repeat-box .actions > button:not(.primary), .wheel-box .actions > button:not(.primary), .slot .actions > button:not(.primary) { background: var(--bg); }
 .slot .wheel-box { background: var(--bg); }
 .slot .wheel-box .actions > button:not(.primary) { background: var(--surface); }
+
+/* calendar: 오늘 + 주/월 switch on the right */
+.cal-tools { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+.mode-seg { display: inline-flex; padding: 2px; border-radius: 99px; background: var(--surface); }
+.mode-seg button { padding: 4px 11px; border-radius: 99px; font-size: 13px; color: var(--muted); background: none; }
+.mode-seg button.on { background: var(--bg); color: var(--text); font-weight: 700; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12); }
+.cat-add input { font-size: 14px; }
+.cat-add input::placeholder { color: var(--muted); }
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='chalk']) .cat-add input::placeholder { color: #b4b8bf; }
+}

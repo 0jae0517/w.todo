@@ -25,13 +25,17 @@ export default function Calendar({ selected, onSelect, mode, onModeChange, stats
     <section className="calendar">
       <div className="cal-head">
         <button className="icon-btn" onClick={() => step(-1)} aria-label="이전">‹</button>
-        <button className="cal-title" onClick={() => onModeChange(mode === 'week' ? 'month' : 'week')}>
-          {monthLabel(selected)} <span className="caret">{mode === 'week' ? '▾' : '▴'}</span>
-        </button>
+        <span className="cal-title">{monthLabel(selected)}</span>
         <button className="icon-btn" onClick={() => step(1)} aria-label="다음">›</button>
-        {selected !== today && (
-          <button className="pill" onClick={() => onSelect(today)}>오늘</button>
-        )}
+        <span className="cal-tools">
+          {selected !== today && (
+            <button className="pill" onClick={() => onSelect(today)}>오늘</button>
+          )}
+          <span className="mode-seg" role="group" aria-label="보기">
+            <button className={mode === 'week' ? 'on' : ''} onClick={() => onModeChange('week')} aria-pressed={mode === 'week'}>주</button>
+            <button className={mode === 'month' ? 'on' : ''} onClick={() => onModeChange('month')} aria-pressed={mode === 'month'}>월</button>
+          </span>
+        </span>
       </div>
       <div className="cal-grid">
         {WEEKDAYS.map((w, i) => (
