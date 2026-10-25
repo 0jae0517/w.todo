@@ -2,15 +2,22 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { addDays, dayLabel, fromKey, todayKey, weekOf } from '../date'
 import type { Category, Todo } from '../types'
 
-/** about three months, so each day is big enough to see and tap */
-const WEEKS = 13
+/** a year to scroll back through */
+const WEEKS = 53
 const ALL = 'all'
 
-/** GitHub-style grid of finished todos over the last three months, one column per week. */
+/** GitHub-style grid of finished todos, one column per week: about three months fit on screen, older weeks scroll in from the left. */
 export default function Heatmap({ todos, categories }: { todos: Todo[]; categories: Category[] }) {
   const [cat, setCat] = useState(ALL)
   const [picked, setPicked] = useState<string | null>(null)
   const scroller = useRef<HTMLDivElement>(null)
+  // leftmost column in view, so its month is always labelled
+  const [firstCol, setFirstCol] = useState(0)
+  const onScroll = () => {
+    const el = scroller.current
+    const cell = el?.querySelector('.heat-cell')?.getBoundingClientRect().width
+    if (el && cell) setFirstCol(Math.round(el.scrollLeft / (cell + 4)))
+  }
   const today = todayKey()
 
   const days = useMemo(() => {
@@ -26,6 +33,7 @@ export default function Heatmap({ todos, categories }: { todos: Todo[]; categori
 
   useEffect(() => {
     scroller.current?.scrollTo({ left: scroller.current.scrollWidth })
+    onScroll()
   }, [])
 
   const color = categories.find((c) => c.id === cat)?.color ?? 'var(--accent)'
@@ -43,11 +51,13 @@ export default function Heatmap({ todos, categories }: { todos: Todo[]; categori
           </button>
         ))}
       </div>
-      <div className="heat-scroll" ref={scroller}>
+      <div className="heat-scroll" ref={scroller} onScroll={onScroll}>
         <div className="heat-months">
           {Array.from({ length: WEEKS }, (_, w) => {
-            // label the week a month starts in
-            const first = days.slice(w * 7, w * 7 + 7).find((d) => d.endsWith('-01'))
+            // label each week a month starts in, and the leftmost one in view (unless the next one is labelled anyway)
+            const week = days.slice(w * 7, w * 7 + 7)
+            const startsMonth = (ws: string[]) => ws.find((d) => d.endsWith('-01'))
+            const first = startsMonth(week) ?? (w === firstCol && !startsMonth(days.slice(w * 7 + 7, w * 7 + 14)) ? week[6] : undefined)
             return <span key={w}>{first ? `${fromKey(first).getMonth() + 1}월` : ''}</span>
           })}
         </div>
@@ -67,7 +77,7 @@ export default function Heatmap({ todos, categories }: { todos: Todo[]; categori
         </div>
       </div>
       <p className="heat-info">
-        {picked ? `${dayLabel(picked)} · ${counts.get(picked) ?? 0}개 완료` : `최근 3달 동안 ${activeDays}일, ${total}개 완료`}
+        {picked ? `${dayLabel(picked)} · ${counts.get(picked) ?? 0}개 완료` : `최근 1년 동안 ${activeDays}일, ${total}개 완료`}
       </p>
     </div>
   )
