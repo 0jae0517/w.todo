@@ -1,4 +1,6 @@
 :root {
+  /* text and icons drawn on the accent colour */
+  --on-accent: #fff;
   --bg: #ffffff;
   --surface: #f4f5f7;
   --text: #1c1d21;
@@ -134,7 +136,7 @@ input, select {
   color: var(--muted);
 }
 .mark.has-left { color: var(--text); }
-.mark.all-done { background: var(--accent); color: #fff; }
+.mark.all-done { background: var(--accent); color: var(--on-accent); }
 .num {
   font-size: 12px;
   min-width: 22px;
@@ -286,7 +288,7 @@ input, select {
   padding: 10px 16px;
   border-radius: 10px;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   font-weight: 600;
 }
 .primary:disabled { opacity: 0.5; }
@@ -388,7 +390,7 @@ input, select {
 .person { display: flex; align-items: center; gap: 10px; text-align: left; flex: 1; min-width: 0; }
 .person strong { margin-right: 6px; }
 .avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--surface); display: grid; place-items: center; font-weight: 700; flex: none; }
-.follow { padding: 7px 14px; border-radius: 10px; background: var(--accent); color: #fff; font-size: 13px; font-weight: 600; flex: none; }
+.follow { padding: 7px 14px; border-radius: 10px; background: var(--accent); color: var(--on-accent); font-size: 13px; font-weight: 600; flex: none; }
 .follow.on { background: var(--surface); color: var(--text); }
 .friend-head { display: flex; align-items: center; gap: 6px; padding: 8px 0; }
 .friend-name { flex: 1; }
@@ -492,14 +494,14 @@ input, select {
 .repeat-days { justify-content: space-between; }
 .repeat-days button.sun { color: var(--danger); }
 .repeat-days button.sat { color: var(--sat); }
-.repeat-presets button.on, .repeat-days button.on { background: var(--accent); color: #fff; font-weight: 700; }
+.repeat-presets button.on, .repeat-days button.on { background: var(--accent); color: var(--on-accent); font-weight: 700; }
 .repeat-box .actions { margin: 6px 0 0; }
 
 /* chips */
 .chips { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 10px; scrollbar-width: none; }
 .chips::-webkit-scrollbar { display: none; }
 .chips button { flex: none; padding: 6px 12px; border-radius: 999px; background: var(--surface); font-size: 13px; }
-.chips button.on { background: var(--accent); color: #fff; font-weight: 700; }
+.chips button.on { background: var(--accent); color: var(--on-accent); font-weight: 700; }
 
 /* heatmap */
 /* 13 weeks fill the visible width; the rest of the year scrolls */
@@ -525,8 +527,8 @@ input, select {
 
 /* recap */
 .recap-open { display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 16px; border-radius: 16px; background: var(--surface); font-size: 15px; font-weight: 600; text-align: left; }
-.recap-open.fresh { background: var(--accent); color: #fff; }
-.recap-open.fresh .muted { color: #fff; }
+.recap-open.fresh { background: var(--accent); color: var(--on-accent); }
+.recap-open.fresh .muted { color: var(--on-accent); }
 .recap-img { display: block; width: 100%; border-radius: 16px; margin-bottom: 12px; }
 .card .heat-cell, .card .chips button:not(.on) { background: var(--bg); }
 
@@ -602,6 +604,7 @@ input, select {
 
 /* ---- 칠판 테마 ---- */
 :root[data-theme='chalk'] {
+  --on-accent: #2e3440;
   --bg: #2e3440;
   --surface: #3b4252;
   --text: #fffdf6;
@@ -722,7 +725,7 @@ input, select {
 .todo.dragging .todo-row { background: var(--bg); border-radius: 10px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18); }
 .todo-row { touch-action: pan-y; user-select: none; -webkit-user-select: none; }
 /* .actions buttons default to the surface colour; keep primary ones filled, and lift plain ones off a surface panel */
-.actions > button.primary { background: var(--accent); color: #fff; }
+.actions > button.primary { background: var(--accent); color: var(--on-accent); }
 .repeat-box .actions > button:not(.primary), .wheel-box .actions > button:not(.primary), .slot .actions > button:not(.primary) { background: var(--bg); }
 .slot .wheel-box { background: var(--bg); }
 .slot .wheel-box .actions > button:not(.primary) { background: var(--surface); }
