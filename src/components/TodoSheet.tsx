@@ -37,13 +37,7 @@ export default function TodoSheet({ todo, categories, reactions, onClose, onFocu
 
   return (
     <Sheet onClose={close}>
-      <input
-        className="sheet-input"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        onKeyDown={(e) => e.key === 'Enter' && !e.nativeEvent.isComposing && close()}
-      />
-      <p className="sheet-sub">
+      <p className="sheet-sub todo-sheet-date">
         {dayLabel(todo.date)}
         {todo.focus_seconds > 0 && (
           <>
@@ -53,6 +47,12 @@ export default function TodoSheet({ todo, categories, reactions, onClose, onFocu
         )}
         {routine && repeatStreak(routine.id) > 0 && ` · ${repeatStreak(routine.id)}일 연속 달성`}
       </p>
+      <input
+        className="sheet-input todo-sheet-title"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        onKeyDown={(e) => e.key === 'Enter' && !e.nativeEvent.isComposing && close()}
+      />
       {reactions.length > 0 && (
         <ul className="who-reacted">
           {reactions.map((r) => (
@@ -65,7 +65,7 @@ export default function TodoSheet({ todo, categories, reactions, onClose, onFocu
       )}
       {!todo.done && (
         <button
-          className="primary wide"
+          className="pomo-start"
           onClick={() => {
             saveTitle()
             focusOn(todo.id)
