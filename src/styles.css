@@ -148,7 +148,7 @@ input, select {
 .cal-day.selected .num { background: var(--text); color: var(--bg); font-weight: 700; }
 
 /* day */
-.day-title { font-size: 15px; margin: 18px 0 8px; color: var(--muted); font-weight: 600; }
+.day-title { font-size: 15px; line-height: 1.2; margin: 14px 0; color: var(--muted); font-weight: 600; }
 .empty { color: var(--muted); font-size: 14px; }
 
 .group { margin-bottom: 14px; }
@@ -502,7 +502,7 @@ input, select {
 .people li .person { flex: 1; min-width: 0; }
 
 /* repeat */
-.todo-repeat { display: inline-flex; align-items: center; gap: 2px; font-size: 12px; font-weight: 600; margin-left: 6px; vertical-align: -1px; white-space: nowrap; }
+.todo-repeat { display: inline-flex; align-items: center; gap: 2px; font-size: 12px; font-weight: 600; margin-left: 6px; vertical-align: -3px; white-space: nowrap; }
 .repeat-box { margin: -6px 0 16px; padding: 12px; border-radius: 14px; background: var(--surface); }
 .repeat-presets, .repeat-days { display: flex; gap: 6px; margin-bottom: 8px; }
 .repeat-presets button { flex: 1; padding: 8px 0; border-radius: 10px; background: var(--bg); font-size: 14px; }
