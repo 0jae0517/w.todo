@@ -148,7 +148,7 @@ input, select {
 .cal-day.selected .num { background: var(--text); color: var(--bg); font-weight: 700; }
 
 /* day */
-.day-title { font-size: 15px; margin: 18px 0 8px; color: var(--muted); font-weight: 600; }
+.day-title { font-size: 15px; line-height: 1.2; margin: 14px 0; color: var(--muted); font-weight: 600; }
 .empty { color: var(--muted); font-size: 14px; }
 
 .group { margin-bottom: 14px; }
