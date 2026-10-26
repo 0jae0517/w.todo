@@ -186,7 +186,7 @@ input, select {
   color: #fff;
 }
 .todo.done .check { background: var(--c); }
-.todo-title { flex: 1; font-size: 15px; word-break: break-all; cursor: pointer; }
+.todo-title { flex: 1; font-size: 15px; text-box: trim-both cap alphabetic; word-break: break-all; cursor: pointer; }
 .todo.done .todo-title { color: var(--muted); }
 .todo.done .todo-text { text-decoration: line-through; text-decoration-thickness: 1.5px; }
 .more { color: var(--muted); font-size: 18px; padding: 4px 8px; border-radius: 8px; }
