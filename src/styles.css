@@ -246,6 +246,22 @@ input, select {
   outline: none;
 }
 .sheet-input:focus { border-bottom-color: var(--accent); }
+/* todo sheet: date above a borderless title */
+.todo-sheet-date { margin: 0 0 2px; }
+.sheet-input.todo-sheet-title, .sheet-input.todo-sheet-title:focus { border-bottom: 0; padding: 2px 0 10px; font-size: 19px; }
+/* quiet outline button so it doesn't outweigh the rest of the sheet */
+.pomo-start {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 8px;
+  border-radius: 12px;
+  border: 1.5px solid var(--line);
+  background: transparent;
+  color: var(--text);
+  font-size: 14px;
+  cursor: pointer;
+}
+.pomo-start svg { width: 1.05em; height: 1.05em; vertical-align: -0.17em; margin-right: 2px; }
 
 .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
 .actions > button, .action-date {
@@ -486,7 +502,7 @@ input, select {
 .people li .person { flex: 1; min-width: 0; }
 
 /* repeat */
-.todo-repeat { display: inline-flex; align-items: center; gap: 2px; font-size: 12px; font-weight: 600; margin-right: 6px; vertical-align: -1px; white-space: nowrap; }
+.todo-repeat { display: inline-flex; align-items: center; gap: 2px; font-size: 12px; font-weight: 600; margin-left: 6px; vertical-align: -1px; white-space: nowrap; }
 .repeat-box { margin: -6px 0 16px; padding: 12px; border-radius: 14px; background: var(--surface); }
 .repeat-presets, .repeat-days { display: flex; gap: 6px; margin-bottom: 8px; }
 .repeat-presets button { flex: 1; padding: 8px 0; border-radius: 10px; background: var(--bg); font-size: 14px; }
