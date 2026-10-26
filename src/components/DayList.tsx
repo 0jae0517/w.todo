@@ -202,13 +202,13 @@ function TodoItems({ items, color: c, editable, reactions, myId, onOpenTodo, onR
             </button>
             <span className="todo-title" onClick={tap(() => onOpenTodo?.(t.id))}>
               {t.time && <span className="todo-time">{timeLabel(t.time)}</span>}
+              <span className="todo-text">{t.title}</span>
               {t.routine_id && (
                 <span className="todo-repeat" title="반복">
                   <RepeatIcon />
                   {repeatDays.get(t.routine_id) && <span>{shortRepeat(repeatDays.get(t.routine_id)!)}</span>}
                 </span>
               )}
-              <span className="todo-text">{t.title}</span>
               {t.focus_seconds > 0 && (
                 <span className="tomato">
                   {' '}
