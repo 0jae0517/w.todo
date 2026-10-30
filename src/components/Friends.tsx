@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { supabase } from '../supabase'
 import {
   acceptRequest,
@@ -17,29 +17,46 @@ import {
 } from '../social'
 import { useSync } from '../sync'
 import FriendView, { FOLLOW_LABEL } from './FriendView'
+import Office from './Office'
 import { TemplateGallery } from './Templates'
 
 export default function Friends({ onLogin }: { onLogin: () => void }) {
-  const [view, setView] = useState<'friends' | 'templates'>('friends')
+  const [view, setView] = useState<'friends' | 'office' | 'templates'>('friends')
+  // a friend tapped in the office opens on the 친구 page
+  const [viewing, setViewing] = useState<Profile | null>(null)
   return (
     <>
       <div className="seg friends-seg" role="tablist">
         <button role="tab" aria-selected={view === 'friends'} className={view === 'friends' ? 'on' : ''} onClick={() => setView('friends')}>
           친구
         </button>
+        <button role="tab" aria-selected={view === 'office'} className={view === 'office' ? 'on' : ''} onClick={() => setView('office')}>
+          오피스
+        </button>
         <button role="tab" aria-selected={view === 'templates'} className={view === 'templates' ? 'on' : ''} onClick={() => setView('templates')}>
           템플릿
         </button>
       </div>
-      {view === 'friends' ? <FriendsPanel onLogin={onLogin} /> : supabase ? <TemplateGallery /> : <p className="empty">동기화 서버가 아직 연결되지 않았어요.</p>}
+      {view === 'friends' ? (
+        <FriendsPanel onLogin={onLogin} viewing={viewing} setViewing={setViewing} />
+      ) : view === 'office' ? (
+        <FriendsPanel onLogin={onLogin} viewing={null} setViewing={setViewing}>
+          <Office
+            onOpenFriend={(p) => {
+              setViewing(p)
+              setView('friends')
+            }}
+          />
+        </FriendsPanel>
+      ) : supabase ? <TemplateGallery /> : <p className="empty">동기화 서버가 아직 연결되지 않았어요.</p>}
     </>
   )
 }
 
-function FriendsPanel({ onLogin }: { onLogin: () => void }) {
+/** Shows the friend list, or `children` instead, once signed in with a profile. */
+function FriendsPanel({ onLogin, viewing, setViewing, children }: { onLogin: () => void; viewing: Profile | null; setViewing: (p: Profile | null) => void; children?: ReactNode }) {
   const { session } = useSync()
   const { profile, reload } = useMyProfile()
-  const [viewing, setViewing] = useState<Profile | null>(null)
 
   if (!supabase || !session) {
     return (
@@ -55,6 +72,7 @@ function FriendsPanel({ onLogin }: { onLogin: () => void }) {
   }
   if (profile === undefined) return <p className="empty">불러오는 중…</p>
   if (profile === null) return <ProfileForm onSaved={reload} />
+  if (children) return children
   if (viewing) return <FriendView friend={viewing} onBack={() => setViewing(null)} />
   return <FriendHome me={profile} onOpen={setViewing} onEditProfile={reload} />
 }
