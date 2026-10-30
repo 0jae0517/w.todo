@@ -335,8 +335,41 @@ exception when duplicate_object then null;
 end $$;
 
 -- ============================================================
+-- 도트 오피스: 지금 뽀모도로 중인지, 쉬는 중인지, 접속해 있는지 (맞팔 친구끼리만)
+-- 할 일 제목은 여기 없고, 보는 사람이 todos 의 공개 범위 규칙대로 따로 읽음
+-- ============================================================
+create table if not exists public.office_status (
+  user_id uuid primary key default auth.uid() references public.profiles on delete cascade,
+  phase   text not null default 'idle' check (phase in ('idle', 'focus', 'short', 'long')),
+  todo_id text,
+  ends_at timestamptz,
+  seen_at timestamptz not null default now()
+);
+
+alter table public.office_status enable row level security;
+
+-- 서로 팔로우하는 사이인지
+create or replace function public.is_mutual(target uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from follows where follower_id = auth.uid() and followee_id = target and accepted)
+     and exists (select 1 from follows where follower_id = target and followee_id = auth.uid() and accepted)
+$$;
+
+drop policy if exists "office readable" on public.office_status;
+create policy "office readable" on public.office_status for select to authenticated
+  using (user_id = auth.uid() or public.is_mutual(user_id));
+drop policy if exists "own office status" on public.office_status;
+create policy "own office status" on public.office_status for all to authenticated
+  using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+do $$ begin
+  alter publication supabase_realtime add table public.office_status;
+exception when duplicate_object then null;
+end $$;
+
+-- ============================================================
 -- 회원 탈퇴: 본인 계정을 지우면 위 표들이 on delete cascade 로 함께 지워짐
--- (할 일, 카테고리, 반복, 집중 기록, 시간표, 프로필, 팔로우, 감정표현, 템플릿)
+-- (할 일, 카테고리, 반복, 집중 기록, 시간표, 프로필, 팔로우, 감정표현, 템플릿, 오피스 상태)
 -- ============================================================
 create or replace function public.delete_account() returns void
 language plpgsql security definer set search_path = public as $$

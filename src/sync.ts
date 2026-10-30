@@ -3,6 +3,7 @@ import type { RealtimeChannel, Session } from '@supabase/supabase-js'
 import { supabase } from './supabase'
 import { authRedirect, isNative, nativeOAuth } from './native'
 import { clearTimer } from './pomodoro'
+import { leaveOffice } from './office'
 import { UNTOUCHED, applyRemote, bindUser, generateRepeats, getCursor, hasPending, markPushed, onLocalChange, pendingChanges, resetLocal } from './store'
 import type { Kind } from './types'
 
@@ -171,6 +172,8 @@ export async function signOut() {
     !confirm('아직 서버에 올라가지 않은 변경이 있어요. 로그아웃하면 이 기기에서 사라져요. 그래도 로그아웃할까요?')
   )
     return
+  // friends stop seeing me in the office right away
+  await leaveOffice().catch(() => {})
   // only this device; other devices stay signed in
   await supabase?.auth.signOut({ scope: 'local' })
   resetLocal()

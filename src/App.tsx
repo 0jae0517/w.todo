@@ -16,6 +16,7 @@ import TodoSheet from './components/TodoSheet'
 import { dayLabel, todayKey } from './date'
 import { holidayName } from './holidays'
 import { startNative } from './native'
+import { useOfficePresence } from './office'
 import { useMyReactions, type Profile } from './social'
 import { useStore } from './store'
 import { currentUserId, useSync } from './sync'
@@ -43,6 +44,7 @@ export default function App() {
     return id
   })
   useEffect(() => startNative(setTemplateId), [])
+  useOfficePresence()
 
   const stats = useMemo(() => {
     const m = new Map<string, DayStat>()
