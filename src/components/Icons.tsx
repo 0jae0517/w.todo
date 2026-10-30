@@ -79,3 +79,9 @@ export const ResetIcon = () => (
 export const SkipIcon = () => (
   <svg {...base}><path d="M5.5 5.5l9 6.5-9 6.5z" /><path d="M18.5 5.5v13" /></svg>
 )
+export const OfficeIcon = () => (
+  <svg {...base}><path d="M3 20h18M5 20v-8h14v8" /><rect x="8" y="5" width="8" height="5" rx="1" /><path d="M12 10v2" /></svg>
+)
+export const TemplateIcon = () => (
+  <svg {...base}><rect x="7" y="3.5" width="13" height="13" rx="3" /><path d="M17 20.5H7a3 3 0 01-3-3v-10" /></svg>
+)

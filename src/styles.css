@@ -833,3 +833,9 @@ input, select {
 .office-away-chip { padding: 4px 10px; border-radius: 999px; background: var(--surface); font-size: 13px; color: var(--muted); }
 .office-toggle { display: flex; align-items: center; gap: 8px; margin-top: 16px; font-size: 14px; color: var(--muted); }
 .office-status-line { margin: 8px 0 16px; font-size: 15px; line-height: 1.5; }
+
+/* 내 정보: follower / following counts open the friends popup */
+.follow-counts { display: flex; gap: 8px; margin: 8px 0 0; }
+.follow-counts button { flex: 1; padding: 9px 0; border-radius: 10px; background: var(--surface); font-size: 13px; color: var(--muted); }
+.follow-counts b { color: var(--text); margin-left: 2px; }
+.friends-sheet { min-height: 50dvh; }
