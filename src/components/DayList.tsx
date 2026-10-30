@@ -227,8 +227,8 @@ function TodoItems({ items, color: c, editable, reactions, myId, onOpenTodo, onR
       ))}
       {adding && (
         <li className="todo">
-          <div className="todo-row">
-            <span className="check" style={c} />
+          <div className="todo-row" style={c}>
+            <span className="check" />
             <NewTodoInput onSubmit={adding} onDone={onAddDone} />
           </div>
         </li>
