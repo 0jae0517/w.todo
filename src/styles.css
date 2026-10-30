@@ -201,7 +201,7 @@ input, select {
   font-size: 15px;
   outline: none;
 }
-.todo-input:focus { border-bottom-color: var(--accent); }
+.todo-input:focus { border-bottom-color: var(--c, var(--accent)); }
 
 /* sheets */
 .backdrop {
