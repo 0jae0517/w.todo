@@ -17,6 +17,7 @@ import Mascot from './Mascot'
 import { setTheme, useTheme, type Theme } from '../theme'
 import { setTimetableOn, useTimetableOn } from '../timetable'
 import { ChevronRightIcon, PersonIcon, SparkleIcon, TomatoIcon } from './Icons'
+import type { FollowTab } from './Friends'
 
 type View = 'summary' | 'grass' | 'focus' | 'recap'
 const VIEWS: [View, string][] = [
@@ -27,7 +28,7 @@ const VIEWS: [View, string][] = [
 ]
 const VIEW_KEY = 'todo-app:me-view'
 
-export default function Me({ todos, categories }: { todos: Todo[]; categories: Category[] }) {
+export default function Me({ todos, categories, onOpenFollows }: { todos: Todo[]; categories: Category[]; onOpenFollows: (tab: FollowTab) => void }) {
   const { sessions } = useStore()
   const [view, setView] = useState<View>(() => {
     try {
@@ -48,7 +49,7 @@ export default function Me({ todos, categories }: { todos: Todo[]; categories: C
 
   return (
     <div className="me">
-      <AccountRow />
+      <AccountRow onOpenFollows={onOpenFollows} />
       {ready && view !== 'recap' && (
         <button className="recap-open fresh" onClick={() => pick('recap')}>
           <span>
@@ -87,7 +88,7 @@ export default function Me({ todos, categories }: { todos: Todo[]; categories: C
 }
 
 /** One line at the top: who I am (or a way to sign in), with settings behind a tap. */
-function AccountRow() {
+function AccountRow({ onOpenFollows }: { onOpenFollows: (tab: FollowTab) => void }) {
   const { session, status } = useSync()
   const { profile, reload } = useMyProfile()
   const [open, setOpen] = useState(false)
@@ -110,14 +111,7 @@ function AccountRow() {
         <span className="profile-text">
           <strong>{name}</strong>
           {profile ? (
-            <span className="profile-counts">
-              @{profile.username}
-              {counts && (
-                <>
-                  {' · '}팔로워 <b>{counts.followers}</b> · 팔로잉 <b>{counts.following}</b>
-                </>
-              )}
-            </span>
+            <span className="profile-counts">@{profile.username}</span>
           ) : (
             <span className="profile-counts">{session ? '친구가 아이디로 나를 찾을 수 있어요' : '로그인하면 휴대폰과 컴퓨터가 동기화돼요'}</span>
           )}
@@ -127,6 +121,16 @@ function AccountRow() {
           <ChevronRightIcon />
         </span>
       </button>
+      {profile && counts && (
+        <div className="follow-counts">
+          <button onClick={() => onOpenFollows('followers')}>
+            팔로워 <b>{counts.followers}</b>
+          </button>
+          <button onClick={() => onOpenFollows('following')}>
+            팔로잉 <b>{counts.following}</b>
+          </button>
+        </div>
+      )}
       {open && (
         <Sheet onClose={() => setOpen(false)}>
           {!session ? (

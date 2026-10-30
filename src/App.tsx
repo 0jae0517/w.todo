@@ -5,8 +5,8 @@ import CategorySheet from './components/CategorySheet'
 import DayList from './components/DayList'
 import FriendStrip from './components/FriendStrip'
 import FriendView from './components/FriendView'
-import Friends from './components/Friends'
-import { CheckIcon, CloudIcon, FriendsIcon, PersonIcon, PlusIcon, TableIcon, TimerIcon } from './components/Icons'
+import { FriendsSheet, OfficeTab, TemplatesTab, type FollowTab } from './components/Friends'
+import { CheckIcon, CloudIcon, FriendsIcon, OfficeIcon, PersonIcon, PlusIcon, TableIcon, TemplateIcon, TimerIcon } from './components/Icons'
 import Mascot, { ChalkFilter, type Mood } from './components/Mascot'
 import Me from './components/Me'
 import Pomodoro from './components/Pomodoro'
@@ -22,10 +22,10 @@ import { useStore } from './store'
 import { currentUserId, useSync } from './sync'
 import { useTimetableOn } from './timetable'
 
-type Tab = 'todos' | 'timetable' | 'timer' | 'friends' | 'me'
+type Tab = 'todos' | 'timetable' | 'timer' | 'office' | 'templates' | 'me'
 type Panel = { kind: 'todo'; id: string } | { kind: 'course'; id: string } | { kind: 'categories' } | null
 
-const TITLES: Record<Tab, string> = { todos: 'w.todo', timetable: '시간표', timer: '뽀모도로', friends: '친구', me: '내 정보' }
+const TITLES: Record<Tab, string> = { todos: 'w.todo', timetable: '시간표', timer: '뽀모도로', office: '오피스', templates: '템플릿', me: '내 정보' }
 
 export default function App() {
   const { categories, todos, courses } = useStore()
@@ -37,6 +37,8 @@ export default function App() {
   const [mode, setMode] = useState<'week' | 'month'>('month')
   const [panel, setPanel] = useState<Panel>(null)
   const [friend, setFriend] = useState<Profile | null>(null)
+  // the friends popup, opened from the todo screen, 내 정보 or the office
+  const [friends, setFriends] = useState<{ tab?: FollowTab; friend?: Profile } | null>(null)
   // a shared template link: ?t=<id>
   const [templateId, setTemplateId] = useState(() => {
     const id = new URLSearchParams(location.search).get('t')
@@ -67,6 +69,11 @@ export default function App() {
       <header className="top">
         <h1>{TITLES[tab]}</h1>
         <div className="top-actions">
+          {tab === 'todos' && (
+            <button className="icon-btn" onClick={() => setFriends({})} aria-label="친구" title="친구">
+              <FriendsIcon />
+            </button>
+          )}
           {tab === 'todos' && !friend && (
             <button className="icon-btn" onClick={() => setPanel({ kind: 'categories' })} aria-label="카테고리 추가" title="카테고리 추가">
               <PlusIcon />
@@ -79,7 +86,7 @@ export default function App() {
         </div>
       </header>
 
-      {tab === 'todos' && <FriendStrip selected={friend} onSelect={setFriend} onFind={() => setTab('friends')} />}
+      {tab === 'todos' && <FriendStrip selected={friend} onSelect={setFriend} onFind={() => setFriends({})} />}
       {tab === 'todos' && friend && (
         <main>
           <FriendView key={friend.id} friend={friend} />
@@ -114,8 +121,9 @@ export default function App() {
       )}
       {tab === 'timetable' && <Timetable />}
       {tab === 'timer' && <Pomodoro todos={todos} />}
-      {tab === 'friends' && <Friends onLogin={() => setTab('me')} />}
-      {tab === 'me' && <Me todos={todos} categories={categories} />}
+      {tab === 'office' && <OfficeTab onLogin={() => setTab('me')} onOpenFriend={(p) => setFriends({ friend: p })} />}
+      {tab === 'templates' && <TemplatesTab />}
+      {tab === 'me' && <Me todos={todos} categories={categories} onOpenFollows={(t) => setFriends({ tab: t })} />}
 
       <nav className="tabbar">
         <button className={tab === 'todos' ? 'on' : ''} onClick={() => setTab('todos')}>
@@ -129,8 +137,11 @@ export default function App() {
         <button className={tab === 'timer' ? 'on' : ''} onClick={() => setTab('timer')}>
           <TimerIcon />타이머
         </button>
-        <button className={tab === 'friends' ? 'on' : ''} onClick={() => setTab('friends')}>
-          <FriendsIcon />친구
+        <button className={tab === 'office' ? 'on' : ''} onClick={() => setTab('office')}>
+          <OfficeIcon />오피스
+        </button>
+        <button className={tab === 'templates' ? 'on' : ''} onClick={() => setTab('templates')}>
+          <TemplateIcon />템플릿
         </button>
         <button className={tab === 'me' ? 'on' : ''} onClick={() => setTab('me')}>
           <PersonIcon />내 정보
@@ -150,6 +161,7 @@ export default function App() {
           }}
         />
       )}
+      {friends && <FriendsSheet tab={friends.tab} friend={friends.friend} onClose={() => setFriends(null)} onLogin={() => setTab('me')} />}
       {templateId && <TemplateView id={templateId} onClose={() => setTemplateId(null)} />}
       {panel?.kind === 'course' && courses.some((c) => c.id === panel.id) && (
         <CourseSheet course={courses.find((c) => c.id === panel.id)} onClose={() => setPanel(null)} />

@@ -18,50 +18,59 @@ import {
 import { useSync } from '../sync'
 import FriendView, { FOLLOW_LABEL } from './FriendView'
 import Office from './Office'
+import Sheet from './Sheet'
 import { TemplateGallery } from './Templates'
 
-export default function Friends({ onLogin }: { onLogin: () => void }) {
-  const [view, setView] = useState<'friends' | 'office' | 'templates'>('friends')
-  // a friend tapped in the office opens on the 친구 page
-  const [viewing, setViewing] = useState<Profile | null>(null)
+/** The 오피스 tab: needs a login and a profile, like everything with friends. */
+export function OfficeTab({ onLogin, onOpenFriend }: { onLogin: () => void; onOpenFriend: (p: Profile) => void }) {
   return (
-    <>
-      <div className="seg friends-seg" role="tablist">
-        <button role="tab" aria-selected={view === 'friends'} className={view === 'friends' ? 'on' : ''} onClick={() => setView('friends')}>
-          친구
-        </button>
-        <button role="tab" aria-selected={view === 'office'} className={view === 'office' ? 'on' : ''} onClick={() => setView('office')}>
-          오피스
-        </button>
-        <button role="tab" aria-selected={view === 'templates'} className={view === 'templates' ? 'on' : ''} onClick={() => setView('templates')}>
-          템플릿
-        </button>
-      </div>
-      {view === 'friends' ? (
-        <FriendsPanel onLogin={onLogin} viewing={viewing} setViewing={setViewing} />
-      ) : view === 'office' ? (
-        <FriendsPanel onLogin={onLogin} viewing={null} setViewing={setViewing}>
-          <Office
-            onOpenFriend={(p) => {
-              setViewing(p)
-              setView('friends')
-            }}
-          />
-        </FriendsPanel>
-      ) : supabase ? <TemplateGallery /> : <p className="empty">동기화 서버가 아직 연결되지 않았어요.</p>}
-    </>
+    <SignedIn onLogin={onLogin}>
+      {() => <Office onOpenFriend={onOpenFriend} />}
+    </SignedIn>
   )
 }
 
-/** Shows the friend list, or `children` instead, once signed in with a profile. */
-function FriendsPanel({ onLogin, viewing, setViewing, children }: { onLogin: () => void; viewing: Profile | null; setViewing: (p: Profile | null) => void; children?: ReactNode }) {
+/** The 템플릿 tab. */
+export function TemplatesTab() {
+  return supabase ? <TemplateGallery /> : <p className="empty">동기화 서버가 아직 연결되지 않았어요.</p>
+}
+
+export type FollowTab = 'following' | 'followers'
+
+/** Friends as a popup: following/followers, requests and search, or one friend's todos. */
+export function FriendsSheet({ tab, friend, onClose, onLogin }: { tab?: FollowTab; friend?: Profile; onClose: () => void; onLogin: () => void }) {
+  const [viewing, setViewing] = useState<Profile | null>(friend ?? null)
+  return (
+    <Sheet onClose={onClose}>
+      <div className="friends-sheet">
+        <SignedIn
+          onLogin={() => {
+            onClose()
+            onLogin()
+          }}
+        >
+          {(profile, reload) =>
+            viewing ? (
+              <FriendView friend={viewing} onBack={() => setViewing(null)} />
+            ) : (
+              <FriendHome me={profile} initialTab={tab} onOpen={setViewing} onEditProfile={reload} />
+            )
+          }
+        </SignedIn>
+      </div>
+    </Sheet>
+  )
+}
+
+/** Renders `children` once signed in with a profile; otherwise a way to get there. */
+function SignedIn({ onLogin, children }: { onLogin: () => void; children: (profile: Profile, reload: () => void) => ReactNode }) {
   const { session } = useSync()
   const { profile, reload } = useMyProfile()
 
   if (!supabase || !session) {
     return (
       <div className="friends-empty">
-        <p>팔로우와 감정표현은 로그인하면 쓸 수 있어요.</p>
+        <p>친구 기능은 로그인하면 쓸 수 있어요.</p>
         {supabase ? (
           <button className="primary" onClick={onLogin}>로그인</button>
         ) : (
@@ -72,9 +81,7 @@ function FriendsPanel({ onLogin, viewing, setViewing, children }: { onLogin: () 
   }
   if (profile === undefined) return <p className="empty">불러오는 중…</p>
   if (profile === null) return <ProfileForm onSaved={reload} />
-  if (children) return children
-  if (viewing) return <FriendView friend={viewing} onBack={() => setViewing(null)} />
-  return <FriendHome me={profile} onOpen={setViewing} onEditProfile={reload} />
+  return children(profile, reload)
 }
 
 export function ProfileForm({ onSaved, initial }: { onSaved: () => void; initial?: Profile }) {
@@ -109,8 +116,8 @@ export function ProfileForm({ onSaved, initial }: { onSaved: () => void; initial
   )
 }
 
-function FriendHome({ me, onOpen, onEditProfile }: { me: Profile; onOpen: (p: Profile) => void; onEditProfile: () => void }) {
-  const [tab, setTab] = useState<'following' | 'followers'>('following')
+function FriendHome({ me, initialTab = 'following', onOpen, onEditProfile }: { me: Profile; initialTab?: FollowTab; onOpen: (p: Profile) => void; onEditProfile: () => void }) {
+  const [tab, setTab] = useState<FollowTab>(initialTab)
   const [following, setFollowing] = useState<Profile[]>([])
   const [followers, setFollowers] = useState<Profile[]>([])
   const [requests, setRequests] = useState<Profile[]>([])
