@@ -4,7 +4,7 @@ import { formatDuration } from '../pomodoro'
 import type { Reaction } from '../social'
 import { addTodo, reorderCategories, reorderTodos, updateTodo, useStore } from '../store'
 import type { Category, Todo } from '../types'
-import { HandCheckIcon, HandTriangleIcon, LockIcon, PersonIcon, PlusIcon, RepeatIcon, TomatoIcon } from './Icons'
+import { HandCircleIcon, LockIcon, PersonIcon, PlusIcon, RepeatIcon, TomatoIcon } from './Icons'
 import ReactionBar from './ReactionBar'
 import { repeatLabel } from './TodoSheet'
 import { useDragSort } from './useDragSort'
@@ -157,7 +157,6 @@ function TodoItems({ items, color: c, editable, reactions, myId, onOpenTodo, onR
   return (
     <ul className="p-rows">
       {items.map((t) => {
-        const started = !t.done && t.focus_seconds > 0
         return (
           <li
             key={t.id}
@@ -189,9 +188,8 @@ function TodoItems({ items, color: c, editable, reactions, myId, onOpenTodo, onR
               disabled={!editable}
               onClick={tap(() => updateTodo(t.id, { done: !t.done }))}
               aria-label={t.done ? '완료 취소' : '완료'}
-              title={started ? '진행 중' : undefined}
             >
-              {t.done ? <HandCheckIcon /> : started ? <HandTriangleIcon /> : null}
+              {t.done && <HandCircleIcon />}
             </button>
           </li>
         )
