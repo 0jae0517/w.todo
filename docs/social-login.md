@@ -41,13 +41,21 @@ https://aprhenfljolcaglrtwtp.supabase.co/auth/v1/callback
    - Redirect URI 등록: 위의 콜백 URL
 5. **카카오 로그인 → 보안** 메뉴에서 **Client Secret 코드 생성** → 활성화 상태 **사용함** → 코드 복사
 6. **카카오 로그인 → 동의항목**
-   - 닉네임, 프로필 사진: **필수 동의** 또는 선택 동의로 설정
-   - 카카오계정(이메일): 설정하려면 **앱 설정 → 비즈니스**에서 "개인 개발자 비즈 앱 전환"이 필요해요. 본인 인증만 하면 무료로 바꿀 수 있어요. 전환 후 이메일을 **선택 동의**로 설정하세요.
+   - 닉네임, 프로필 사진: **선택 동의**
+   - 카카오계정(이메일): **필수 동의**. 설정하려면 **앱 설정 → 비즈니스**에서 "개인 개발자 비즈 앱 전환"이 필요해요. 본인 인증만 하면 무료로 바꿀 수 있어요.
 7. Supabase 대시보드 → **Authentication → Sign In / Providers → Kakao**
    - Enable 켜기
    - Client ID(REST API Key) 칸에 2번의 REST API 키
    - Client Secret 칸에 5번의 코드 → Save
    - 이메일 동의항목을 못 켰다면, 같은 화면의 **Allow users without an email** 을 켜 주세요.
+8. 닉네임·사진을 정말 선택으로 보이게 하기 (2026-10-31 추가)
+   Supabase 기본 카카오 로그인은 닉네임·사진·이메일을 항상 이름으로 요청해서, 카카오가 셋 다 **필수**로 보여 줘요. 그래서 앱이 카카오 로그인 화면을 직접 열고, `/api/kakao`(Vercel 함수)가 받은 코드를 ID 토큰으로 바꿔 Supabase에 넘겨요. 이러면 동의 화면이 6번 설정(필수/선택)을 그대로 따라요.
+   - 카카오 디벨로퍼스 → **카카오 로그인 → 고급 → OpenID Connect 활성화**: **ON**
+   - 카카오 디벨로퍼스 → **카카오 로그인 → Redirect URI**에 `https://wtodo.net/api/kakao`, `https://w-todo-seven.vercel.app/api/kakao` 추가 (기존 Supabase 콜백 URL은 그대로 둬요)
+   - Vercel → 프로젝트 → **Settings → Environment Variables**에 추가 후 **Redeploy**
+     - `VITE_KAKAO_REST_KEY` = 2번의 REST API 키
+     - `KAKAO_CLIENT_SECRET` = 5번의 Client Secret 코드
+   - `VITE_KAKAO_REST_KEY`가 없으면 앱은 예전처럼 Supabase 카카오 로그인을 써요.
 
 ## 3. 주소(도메인)를 바꿀 때
 

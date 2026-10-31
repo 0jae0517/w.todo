@@ -2,6 +2,7 @@ import { App } from '@capacitor/app'
 import { Browser } from '@capacitor/browser'
 import { Capacitor } from '@capacitor/core'
 import { LocalNotifications } from '@capacitor/local-notifications'
+import { finishKakaoLogin, kakaoDirect, kakaoLoginUrl } from './kakao'
 import { supabase } from './supabase'
 
 /** True inside the Android (Capacitor) app, false on the web. */
@@ -28,6 +29,7 @@ export const shareBase = () => (isNative ? PUBLIC_URL : location.origin + locati
  * through AUTH_CALLBACK, handled in startNative().
  */
 export async function nativeOAuth(provider: 'google' | 'kakao') {
+  if (provider === 'kakao' && kakaoDirect) return Browser.open({ url: kakaoLoginUrl(PUBLIC_URL, true), presentationStyle: 'popover' })
   const { data, error } = await supabase!.auth.signInWithOAuth({
     provider,
     options: { redirectTo: AUTH_CALLBACK, skipBrowserRedirect: true },
@@ -39,10 +41,15 @@ export async function nativeOAuth(provider: 'google' | 'kakao') {
 async function finishLogin(url: string) {
   // implicit flow: tokens come back in the fragment (errors may come in the query)
   const u = new URL(url)
+  Browser.close().catch(() => {})
+  try {
+    if (await finishKakaoLogin(u.hash)) return
+  } catch (e) {
+    return alert(e instanceof Error ? e.message : String(e))
+  }
   const params = new URLSearchParams(u.hash.slice(1) || u.search.slice(1))
   const access_token = params.get('access_token')
   const refresh_token = params.get('refresh_token')
-  Browser.close().catch(() => {})
   if (access_token && refresh_token) await supabase?.auth.setSession({ access_token, refresh_token })
 }
 
