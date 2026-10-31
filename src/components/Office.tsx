@@ -146,6 +146,79 @@ const left = (s: OfficeStatus | undefined, now: number) => (s?.ends_at ? Date.pa
 
 const nameOf = (p: Profile) => p.name || p.username
 
+// ---- time of day, from this device's clock ----
+
+export type DayPart = 'dawn' | 'morning' | 'day' | 'evening'
+
+/** 새벽 0–6시, 아침 6–11시, 점심 11–17시, 저녁 17–24시 */
+export function dayPartOf(ms: number): DayPart {
+  const h = new Date(ms).getHours()
+  return h < 6 ? 'dawn' : h < 11 ? 'morning' : h < 17 ? 'day' : 'evening'
+}
+
+interface Sky {
+  wall: string
+  trim: string
+  /** window bands, top to bottom (three rows of four pixels) */
+  bands: [string, string, string]
+  /** a dim layer over the whole room, for the darker hours */
+  shade: { color: string; opacity: number } | null
+  lamp: boolean
+}
+
+const SKIES: Record<DayPart, Sky> = {
+  dawn: { wall: '#ddd5e6', trim: '#bfb2cf', bands: ['#232b55', '#2c3566', '#3a4378'], shade: { color: '#1d2350', opacity: 0.3 }, lamp: true },
+  morning: { wall: '#f7eedd', trim: '#dfcdb3', bands: ['#d6edff', '#ffeccc', '#ffd29a'], shade: { color: '#ffc46b', opacity: 0.07 }, lamp: false },
+  day: { wall: '#f3e9dc', trim: '#d9c7b0', bands: ['#bfe6ff', '#bfe6ff', '#bfe6ff'], shade: null, lamp: false },
+  evening: { wall: '#f0dfd6', trim: '#d6bba9', bands: ['#8a78c4', '#e58f9b', '#f8b878'], shade: { color: '#4a2f5c', opacity: 0.16 }, lamp: true },
+}
+
+/** One window pane, 12×12, with what you can see outside at this hour. */
+function Pane({ x, y, part, first }: { x: number; y: number; part: DayPart; first: boolean }) {
+  const { bands } = SKIES[part]
+  return (
+    <g>
+      {bands.map((c, i) => (
+        <rect key={i} x={x} y={y + i * 4} width={12} height={4} fill={c} />
+      ))}
+      {part === 'dawn' && (
+        <>
+          {first ? (
+            <>
+              {/* a crescent moon */}
+              <rect x={x + 3} y={y + 2} width={4} height={5} fill="#fff6c8" />
+              <rect x={x + 2} y={y + 3} width={1} height={3} fill="#fff6c8" />
+              <rect x={x + 5} y={y + 2} width={2} height={4} fill={bands[0]} />
+              <rect x={x + 9} y={y + 7} width={1} height={1} fill="#fff6c8" />
+            </>
+          ) : (
+            <>
+              <rect x={x + 2} y={y + 2} width={1} height={1} fill="#fff6c8" />
+              <rect x={x + 8} y={y + 4} width={1} height={1} fill="#fff6c8" />
+              <rect x={x + 5} y={y + 8} width={1} height={1} fill="#fff6c8" />
+            </>
+          )}
+        </>
+      )}
+      {part === 'morning' && first && (
+        // the sun, just up
+        <>
+          <rect x={x + 4} y={y + 7} width={4} height={4} fill="#ffd43b" />
+          <rect x={x + 3} y={y + 8} width={6} height={2} fill="#ffd43b" />
+        </>
+      )}
+      {part === 'day' && (first ? <rect x={x + 2} y={y + 2} width={4} height={2} fill="#ffffff" /> : <rect x={x + 6} y={y + 4} width={4} height={2} fill="#ffffff" />)}
+      {part === 'evening' && first && (
+        // the sun, going down
+        <>
+          <rect x={x + 5} y={y + 9} width={5} height={3} fill="#ff9e5e" />
+          <rect x={x + 6} y={y + 8} width={3} height={1} fill="#ff9e5e" />
+        </>
+      )}
+    </g>
+  )
+}
+
 export default function Office({ onOpenFriend }: { onOpenFriend: (p: Profile) => void }) {
   const { profile } = useMyProfile()
   const { mates, err } = useOffice(profile)
@@ -242,21 +315,26 @@ function MateSheet({ mate, isMe, now, hidden, onClose, onOpenFriend }: { mate: O
 export function OfficeRoom({ all, meId, now, onTap }: { all: Officemate[]; meId: string; now: number; onTap: (id: string) => void }) {
   const here = all.filter((m) => spotOf(m.status, now) !== 'away')
   const { placed, H, sofaY, deskRows } = layout(here, now)
+  const part = dayPartOf(now)
+  const sky = SKIES[part]
 
   return (
-    <div className="office-room" style={{ aspectRatio: `${W} / ${H}` }}>
+    <div className={`office-room ${part}`} data-daypart={part} style={{ aspectRatio: `${W} / ${H}` }}>
       <svg viewBox={`0 0 ${W} ${H}`} shapeRendering="crispEdges" aria-hidden="true">
         {/* wall */}
-        <rect x={0} y={0} width={W} height={30} fill="#f3e9dc" />
-        <rect x={0} y={28} width={W} height={2} fill="#d9c7b0" />
-        {[8, 50].map((wx) => (
+        <rect x={0} y={0} width={W} height={30} fill={sky.wall} />
+        <rect x={0} y={28} width={W} height={2} fill={sky.trim} />
+        {[8, 50].map((wx, i) => (
           <g key={wx}>
             <rect x={wx} y={6} width={30} height={16} fill="#8c6a4a" />
-            <rect x={wx + 2} y={8} width={12} height={12} fill="#bfe6ff" />
-            <rect x={wx + 16} y={8} width={12} height={12} fill="#bfe6ff" />
-            <rect x={wx + 4} y={10} width={4} height={2} fill="#ffffff" />
+            <Pane x={wx + 2} y={8} part={part} first={i === 0} />
+            <Pane x={wx + 16} y={8} part={part} first={false} />
           </g>
         ))}
+        {/* a wall lamp between the windows */}
+        <rect x={42} y={9} width={4} height={1} fill="#8c6a4a" />
+        <rect x={41} y={10} width={6} height={4} fill={sky.lamp ? '#ffe08a' : '#e9dcc5'} />
+        <rect x={43} y={14} width={2} height={2} fill="#8c6a4a" />
         {/* clock */}
         <rect x={89} y={8} width={9} height={9} fill="#3b3f4c" />
         <rect x={90} y={9} width={7} height={7} fill="#ffffff" />
@@ -307,6 +385,16 @@ export function OfficeRoom({ all, meId, now, onTap }: { all: Officemate[]; meId:
           .map((p) => (
             <Todo key={p.mate.profile.id} x={p.x} y={p.y} id={p.mate.profile.id} />
           ))}
+
+        {/* the hour's light over everything, then the lamp's warm glow on top */}
+        {sky.shade && <rect x={0} y={0} width={W} height={H} fill={sky.shade.color} opacity={sky.shade.opacity} />}
+        {sky.lamp && (
+          <g>
+            <rect x={36} y={6} width={16} height={14} fill="#ffe08a" opacity={0.18} />
+            <rect x={39} y={8} width={10} height={10} fill="#ffe08a" opacity={0.22} />
+            <rect x={41} y={10} width={6} height={4} fill="#ffe08a" />
+          </g>
+        )}
       </svg>
 
       {/* text and taps sit on top as HTML, so Korean stays sharp */}
