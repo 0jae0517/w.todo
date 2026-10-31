@@ -546,20 +546,52 @@ create policy "admin announcements" on public.announcements for all to authentic
 grant select on public.announcements to anon, authenticated;
 grant insert, update, delete on public.announcements to authenticated;
 
--- 관리자 지정: 이 이메일로 가입한 계정을 관리자로 (Gmail 은 점을 무시하니 점·대소문자 상관없이 찾음)
--- 다른 계정을 관리자로 하려면 이메일만 바꿔서 이 부분을 다시 실행
-do $$
-declare admin_email text := 'w.todo.official@gmail.com';
+-- 관리자 잠금: 관리자는 딱 한 명, 아래 이메일로 가입하고 메일 인증까지 끝난 계정만 될 수 있음
+-- (SQL 을 잘못 실행하거나 다른 이메일을 넣어도 DB 가 거부함. 바꾸려면 이 함수의 이메일을 직접 고쳐야 함)
+create or replace function public.admin_allowed(uid uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from auth.users
+    where id = uid
+      and email_confirmed_at is not null
+      -- Gmail 은 점을 무시하니 w.todo.official / wtodo.official 둘 다 같은 메일함
+      and split_part(lower(email), '@', 2) = 'gmail.com'
+      and replace(split_part(lower(email), '@', 1), '.', '') = 'wtodoofficial'
+  )
+$$;
+revoke execute on function public.admin_allowed(uuid) from public, anon, authenticated;
+
+create or replace function public.guard_admins() returns trigger
+language plpgsql security definer set search_path = public as $$
 begin
-  insert into public.admins (user_id)
-  select id from auth.users
-  where lower(email) = lower(admin_email)
-     or (split_part(lower(email), '@', 2) = 'gmail.com'
-         and replace(split_part(lower(email), '@', 1), '.', '') = replace(split_part(lower(admin_email), '@', 1), '.', '')
-         and split_part(lower(admin_email), '@', 2) = 'gmail.com')
-  on conflict do nothing;
+  if tg_op = 'UPDATE' and new.user_id <> old.user_id then
+    raise exception '관리자 계정은 바꿀 수 없어요. 지우고 다시 등록하세요.';
+  end if;
+  if not public.admin_allowed(new.user_id) then
+    raise exception '이 계정은 관리자가 될 수 없어요 (정해진 이메일로 가입하고 인증한 계정만 가능).';
+  end if;
+  if tg_op = 'INSERT' and exists (select 1 from public.admins where user_id <> new.user_id) then
+    raise exception '관리자는 한 명만 둘 수 있어요.';
+  end if;
+  return new;
+end
+$$;
+drop trigger if exists admins_guard on public.admins;
+create trigger admins_guard before insert or update on public.admins
+  for each row execute function public.guard_admins();
+
+-- 혹시 조건에 안 맞는 관리자가 이미 들어가 있으면 지움
+delete from public.admins where not public.admin_allowed(user_id);
+
+-- 관리자 지정: 조건에 맞는 계정 중 가장 먼저 가입한 하나를 관리자로 (이미 있으면 그대로)
+do $$
+begin
   if not exists (select 1 from public.admins) then
-    raise notice '% 로 가입한 계정이 아직 없어요. 앱에서 먼저 가입한 뒤 다시 실행하세요.', admin_email;
+    insert into public.admins (user_id)
+    select id from auth.users where public.admin_allowed(id) order by created_at limit 1;
+  end if;
+  if not exists (select 1 from public.admins) then
+    raise notice 'w.todo.official@gmail.com 으로 가입하고 인증한 계정이 아직 없어요. 앱에서 가입한 뒤 다시 실행하세요.';
   end if;
 end $$;
 
