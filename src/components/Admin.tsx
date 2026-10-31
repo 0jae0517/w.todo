@@ -183,7 +183,7 @@ function Users() {
                   </strong>
                   <span className="muted">
                     {u.email ?? '이메일 없음'}
-                    {u.email_unverified && ' (카카오, 미인증)'}
+                    {u.email_unverified && ' (카카오)'}
                   </span>
                 </span>
                 <span className="admin-badges">

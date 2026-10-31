@@ -431,7 +431,7 @@ end
 $$;
 
 -- 사용자 목록 (이메일·아이디·이름으로 검색, 최근 가입 순)
--- 카카오는 인증 안 된 이메일을 계정 이메일 칸에 넣지 않아서, 그때는 카카오가 준 이메일을 대신 보여줌 (email_unverified = true)
+-- 계정 이메일 칸이 비어 있으면 카카오가 준 이메일을 대신 보여줌 (email_unverified = true, 화면엔 '(카카오)')
 drop function if exists public.admin_users(text, int, int);
 create function public.admin_users(q text default '', lim int default 50, skip int default 0)
 returns table (
@@ -501,6 +501,44 @@ create policy "admin templates update" on public.templates for update to authent
   using (public.is_admin()) with check (public.is_admin());
 drop policy if exists "admin templates delete" on public.templates;
 create policy "admin templates delete" on public.templates for delete to authenticated using (public.is_admin());
+
+-- 카카오 이메일 채우기: 처음 가입할 때 이메일 동의를 안 했다가 나중에 동의한 카카오 사용자는
+-- 카카오 정보(identities)에만 이메일이 있고 계정 이메일 칸은 비어 있음. 카카오가 인증한 이메일이고
+-- 다른 계정이 쓰지 않는 주소일 때만 계정 이메일로 채움 (로그인 방식은 그대로)
+create or replace function public.fill_kakao_email(uid uuid) returns void
+language plpgsql security definer set search_path = public as $$
+declare e text;
+begin
+  select lower(i.identity_data->>'email') into e
+  from auth.identities i
+  where i.user_id = uid and i.provider = 'kakao'
+    and coalesce(i.identity_data->>'email', '') <> ''
+    and coalesce(i.identity_data->>'email_verified', i.identity_data->>'is_email_verified') = 'true'
+  limit 1;
+  if e is null then return; end if;
+  update auth.users u set email = e, email_confirmed_at = coalesce(u.email_confirmed_at, now())
+  where u.id = uid and coalesce(u.email, '') = ''
+    and not exists (select 1 from auth.users o where o.id <> uid and lower(o.email) = e);
+exception when others then
+  null; -- 로그인을 막지 않도록 실패해도 넘어감
+end
+$$;
+revoke execute on function public.fill_kakao_email(uuid) from public, anon, authenticated;
+
+create or replace function public.kakao_identity_email() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if new.provider = 'kakao' then perform public.fill_kakao_email(new.user_id); end if;
+  return null;
+end
+$$;
+drop trigger if exists kakao_email_fill on auth.identities;
+create trigger kakao_email_fill after insert or update on auth.identities
+  for each row execute function public.kakao_identity_email();
+
+-- 이미 가입한 사람들도 한 번 채움
+select public.fill_kakao_email(u.id) from auth.users u
+where coalesce(u.email, '') = '' and exists (select 1 from auth.identities i where i.user_id = u.id and i.provider = 'kakao');
 
 -- 신고: 템플릿이나 사용자(프로필)를 신고하면 관리자가 확인
 create table if not exists public.reports (

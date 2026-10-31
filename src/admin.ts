@@ -67,7 +67,7 @@ export interface AdminUser {
   banned_until: string | null
   todos: number
   admin: boolean
-  /** the email came from Kakao and isn't verified, so it isn't the account's login email */
+  /** the account email is empty, so this is the email Kakao sent */
   email_unverified: boolean
 }
 
