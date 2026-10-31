@@ -1,14 +1,14 @@
 import { holidayName } from '../holidays'
 import { WEEKDAYS, addDays, addMonths, fromKey, monthGrid, monthLabel, todayKey, weekOf } from '../date'
-import { inkFor, shownColor } from '../store'
+import { shownColor } from '../store'
 import type { Category, Todo } from '../types'
 import { CheckMarkIcon, ChevronLeftIcon, ChevronRightIcon } from './Icons'
 
 export interface DayStat {
   total: number
   left: number
-  /** category colours of the day's completed todos, in list order (one entry per todo) */
-  done: string[]
+  /** every todo of the day in list order: its category colour and whether it is done */
+  items: { color: string; cat: string; done: boolean }[]
 }
 
 /** Per-day counts plus the colours the calendar cell is filled with. */
@@ -19,21 +19,72 @@ export function dayStats(todos: Todo[], categories: Category[]) {
   )
   const m = new Map<string, DayStat>()
   for (const t of sorted) {
-    const s = m.get(t.date) ?? { total: 0, left: 0, done: [] }
+    const s = m.get(t.date) ?? { total: 0, left: 0, items: [] }
     s.total++
-    if (t.done) s.done.push(shownColor(cats.get(t.category_id)?.color ?? '#dddddd'))
-    else s.left++
+    if (!t.done) s.left++
+    s.items.push({ color: shownColor(cats.get(t.category_id)?.color ?? '#dddddd'), cat: t.category_id, done: t.done })
     m.set(t.date, s)
   }
   return m
 }
 
-/** Equal horizontal bands, one per completed todo, so a single one fills the whole cell. */
-function fill(colors: string[]) {
-  if (!colors.length) return undefined
-  const n = colors.length
-  const stops = colors.map((c, i) => `${c} ${(i / n) * 100}% ${((i + 1) / n) * 100}%`)
-  return { background: n === 1 ? colors[0] : `linear-gradient(to bottom, ${stops.join(', ')})`, color: inkFor(colors[Math.floor(n / 2)]) }
+const VARIANT = () => (window as unknown as { __cal?: string }).__cal ?? 'ring'
+
+/** Unique categories of the day with how many of their todos are done. */
+function byCategory(items: DayStat['items']) {
+  const m = new Map<string, { color: string; done: number; total: number }>()
+  for (const it of items) {
+    const g = m.get(it.cat) ?? { color: it.color, done: 0, total: 0 }
+    g.total++
+    if (it.done) g.done++
+    m.set(it.cat, g)
+  }
+  return [...m.values()]
+}
+
+function Ring({ s }: { s: DayStat }) {
+  const r = 12, c = 2 * Math.PI * r, n = s.items.length, gap = n > 1 ? 2.2 : 0
+  const seg = c / n
+  return (
+    <span className="mark mk-ring">
+      <svg viewBox="0 0 30 30" aria-hidden>
+        {s.items.map((it, i) => (
+          <circle key={i} cx="15" cy="15" r={r} fill="none" strokeWidth="3.2" strokeLinecap="butt"
+            stroke={it.done ? it.color : 'var(--ring-track)'}
+            strokeDasharray={`${seg - gap} ${c - seg + gap}`} strokeDashoffset={-i * seg}
+            transform="rotate(-90 15 15)" />
+        ))}
+      </svg>
+      <b>{s.left || <CheckMarkIcon />}</b>
+    </span>
+  )
+}
+
+function Mark({ s }: { s?: DayStat }) {
+  if (!s?.total) return <span className="mark" />
+  const v = VARIANT()
+  if (v === 'ring') return <Ring s={s} />
+  if (v === 'bars')
+    return (
+      <span className={`mark mk-bars ${s.left ? '' : 'all'}`}>
+        {byCategory(s.items).map((g, i) => (
+          <i key={i}><i style={{ height: `${(g.done / g.total) * 100}%`, background: g.color }} /></i>
+        ))}
+      </span>
+    )
+  return (
+    <span className={`mark ${s.left ? 'has-left' : 'mk-done'}`}>{s.left || <CheckMarkIcon />}</span>
+  )
+}
+
+function Dots({ s }: { s?: DayStat }) {
+  if (VARIANT() !== 'dots') return null
+  const done = s ? byCategory(s.items).filter((g) => g.done) : []
+  return (
+    <span className="mk-dots">
+      {done.slice(0, 4).map((g, i) => <i key={i} style={{ background: g.color }} />)}
+    </span>
+  )
 }
 
 interface Props {
@@ -90,10 +141,9 @@ export default function Calendar({ selected, onSelect, mode, onModeChange, stats
             .join(' ')
           return (
             <button key={key} className={cls} onClick={() => onSelect(key)} aria-label={holiday ? `${key} ${holiday}` : key} title={holiday}>
-              <span className={`mark ${s?.total ? (s.left ? 'has-left' : 'all-done') : ''}`} style={fill(s?.done ?? [])}>
-                {s?.total ? s.left || <CheckMarkIcon /> : ''}
-              </span>
+              <Mark s={s} />
               <span className="num">{d.getDate()}</span>
+              <Dots s={s} />
             </button>
           )
         })}

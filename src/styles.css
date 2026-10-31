@@ -967,3 +967,17 @@ button.p-status:disabled { cursor: default; }
   background: transparent; outline: none; font-size: 13px; text-align: center; color: var(--text);
 }
 .p-cat-input::placeholder { color: var(--muted); opacity: 0.75; }
+
+/* calendar marks: which categories were done that day */
+:root { --ring-track: #e3e5e9; }
+:root[data-theme='chalk'] { --ring-track: rgba(255, 253, 246, 0.18); }
+.mark.mk-done { color: var(--text); }
+.mk-ring { position: relative; width: 30px; height: 30px; background: none; border-radius: 0; }
+.mk-ring svg { position: absolute; inset: 0; width: 30px; height: 30px; }
+.mk-ring b { position: relative; font-size: 11px; color: var(--text); }
+.mk-ring b svg { position: static; width: 11px; height: 11px; }
+.mk-bars { display: flex; align-items: flex-end; justify-content: center; gap: 2px; padding: 5px 5px; }
+.mk-bars > i { flex: 1; max-width: 6px; height: 100%; border-radius: 3px; background: var(--ring-track); display: flex; align-items: flex-end; overflow: hidden; }
+.mk-bars > i > i { width: 100%; border-radius: 3px; }
+.mk-dots { display: flex; gap: 3px; height: 6px; justify-content: center; }
+.mk-dots i { width: 6px; height: 6px; border-radius: 50%; }
