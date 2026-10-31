@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react'
 import type { RealtimeChannel, Session } from '@supabase/supabase-js'
 import { supabase } from './supabase'
+import { finishKakaoLogin, kakaoDirect, kakaoLoginUrl } from './kakao'
 import { authRedirect, isNative, nativeOAuth } from './native'
 import { clearTimer } from './pomodoro'
 import { leaveOffice } from './office'
@@ -142,6 +143,12 @@ export function startSync() {
       generateRepeats()
     }
   })
+  // back from Kakao's own login page (see kakao.ts)
+  if (location.hash.includes('kakao_')) {
+    const fragment = location.hash
+    history.replaceState(null, '', location.pathname + location.search)
+    finishKakaoLogin(fragment).catch((e) => alert(e instanceof Error ? e.message : String(e)))
+  }
   onLocalChange(scheduleSync)
   window.addEventListener('online', () => syncNow())
   window.addEventListener('offline', () => state.session && set({ status: 'offline' }))
@@ -218,6 +225,7 @@ export async function setPassword(password: string) {
 
 export async function signInWithProvider(provider: 'google' | 'kakao') {
   if (isNative) return nativeOAuth(provider)
+  if (provider === 'kakao' && kakaoDirect) return void location.assign(kakaoLoginUrl(location.origin + '/', false))
   const { error } = await supabase!.auth.signInWithOAuth({
     provider,
     options: { redirectTo: authRedirect() },
