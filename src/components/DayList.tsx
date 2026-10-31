@@ -4,7 +4,7 @@ import { formatDuration } from '../pomodoro'
 import type { Reaction } from '../social'
 import { addTodo, reorderCategories, reorderTodos, updateTodo, useStore } from '../store'
 import type { Category, Todo } from '../types'
-import { CheckMarkIcon, LockIcon, MoreIcon, PersonIcon, PlusIcon, RepeatIcon, TomatoIcon } from './Icons'
+import { HandCheckIcon, HandTriangleIcon, LockIcon, PersonIcon, PlusIcon, RepeatIcon, TomatoIcon } from './Icons'
 import ReactionBar from './ReactionBar'
 import { repeatLabel } from './TodoSheet'
 import { useDragSort } from './useDragSort'
@@ -21,33 +21,6 @@ interface Props {
   onReact?: (todoId: string, emoji: string | null) => void
 }
 
-const FOLD_KEY = 'todo-app:folded'
-
-/** Folded category ids. Own list remembers them on this device; a friend's list only for the visit. */
-function useFolded(persist: boolean) {
-  const [folded, setFolded] = useState<Set<string>>(() => {
-    if (!persist) return new Set()
-    try {
-      return new Set(JSON.parse(localStorage.getItem(FOLD_KEY) ?? '[]'))
-    } catch {
-      return new Set()
-    }
-  })
-  const toggle = (id: string, fold = !folded.has(id)) => {
-    const next = new Set(folded)
-    if (fold) next.add(id)
-    else next.delete(id)
-    setFolded(next)
-    if (persist)
-      try {
-        localStorage.setItem(FOLD_KEY, JSON.stringify([...next]))
-      } catch {
-        // not remembered, that's fine
-      }
-  }
-  return { folded, toggle }
-}
-
 const ORPHAN: Category = {
   id: '',
   name: '카테고리 없음',
@@ -60,6 +33,9 @@ const ORPHAN: Category = {
   updated_at: '',
 }
 
+/** rows the sheet is padded to, so a short day still looks like a planner page */
+const MIN_ROWS = 10
+
 export default function DayList({ date, categories, todos, reactions, myId, onOpenTodo, onReact }: Props) {
   const [adding, setAdding] = useState<string | null>(null)
   const editable = !!onOpenTodo
@@ -68,70 +44,55 @@ export default function DayList({ date, categories, todos, reactions, myId, onOp
   const groups = (orphans.length ? [...categories, ORPHAN] : categories).filter((c) => editable || todos.some((t) => t.category_id === c.id))
   const sortable = editable ? categories.map((c) => c.id) : []
   const dnd = useDragSort(sortable, reorderCategories)
-  const { folded, toggle } = useFolded(editable)
 
   if (!groups.length) {
     return <p className="empty">{editable ? '카테고리를 먼저 만들어 주세요. 오른쪽 위 + 버튼에서 추가할 수 있어요.' : '이 날은 공개된 할 일이 없어요.'}</p>
   }
 
+  const itemsOf = (cat: Category) => (cat === ORPHAN ? orphans : todos.filter((t) => t.category_id === cat.id)).sort(byPosition)
+  // every category takes at least one row (an empty one invites a first todo)
+  const used = groups.reduce((n, cat) => n + Math.max(1, itemsOf(cat).length + (adding === cat.id ? 1 : 0)), 0)
+
   return (
-    <div className="day-list">
-      {groups.map((cat) => {
-        const items = (cat === ORPHAN ? orphans : todos.filter((t) => t.category_id === cat.id)).sort(byPosition)
-        const c = { '--c': cat.color } as React.CSSProperties
-        const key = cat.id || 'orphan'
-        const isFolded = folded.has(key) && adding !== cat.id
-        return (
-          <section
-            key={cat.id || 'orphan'}
-            ref={editable && cat !== ORPHAN ? dnd.register(cat.id) : undefined}
-            className={`group ${dnd.dragging === cat.id ? 'dragging' : ''}`}
-            style={dnd.styleFor(cat.id)}
-          >
-            <div className="group-bar">
-              <button
-                className="group-head"
-                style={c}
-                disabled={!editable || cat === ORPHAN}
-                onPointerDown={editable && cat !== ORPHAN ? dnd.start(cat.id) : undefined}
-                onContextMenu={(e) => editable && e.preventDefault()}
-                onClick={() => {
-                  if (dnd.justDragged.current) return
-                  if (adding !== cat.id) toggle(key, false)
-                  setAdding(adding === cat.id ? null : cat.id)
-                }}
-              >
-                <span className="group-name">{cat.name}</span>
-                {cat.visibility === 'private' && (
-                  <span className="lock" title="나만 보기">
-                    <LockIcon />
-                  </span>
-                )}
-                {cat.visibility === 'selected' && (
-                  <span className="lock" title="일부 공개">
-                    <PersonIcon />
-                  </span>
-                )}
-                {editable && cat !== ORPHAN && (
-                  <span className="group-add">
-                    <PlusIcon />
-                  </span>
-                )}
-              </button>
-              {items.length > 0 && (
-                <button className="fold" onClick={() => toggle(key)} aria-expanded={!isFolded} aria-label={isFolded ? '펼치기' : '접기'}>
-                  {isFolded && (
-                    <span className="fold-count">
-                      {items.filter((t) => t.done).length}/{items.length}
+    <div className="planner">
+      <div className="planner-head">TASKS</div>
+      <div className="planner-sheet">
+        {groups.map((cat) => {
+          const items = itemsOf(cat)
+          const c = { '--c': cat.color } as React.CSSProperties
+          const canAdd = editable && cat !== ORPHAN
+          const openAdd = () => {
+            if (dnd.justDragged.current) return
+            setAdding(adding === cat.id ? null : cat.id)
+          }
+          return (
+            <section
+              key={cat.id || 'orphan'}
+              ref={canAdd ? dnd.register(cat.id) : undefined}
+              className={`p-group ${dnd.dragging === cat.id ? 'dragging' : ''}`}
+              style={{ ...c, ...dnd.styleFor(cat.id) }}
+            >
+              <div className="p-label">
+                <button
+                  className="p-cat"
+                  disabled={!canAdd}
+                  onPointerDown={canAdd ? dnd.start(cat.id) : undefined}
+                  onContextMenu={(e) => editable && e.preventDefault()}
+                  onClick={openAdd}
+                >
+                  <span className="p-cat-name">{cat.name}</span>
+                  {cat.visibility === 'private' && (
+                    <span className="lock" title="나만 보기">
+                      <LockIcon />
                     </span>
                   )}
-                  <svg className={`chev ${isFolded ? 'closed' : ''}`} viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
-                    <path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
+                  {cat.visibility === 'selected' && (
+                    <span className="lock" title="일부 공개">
+                      <PersonIcon />
+                    </span>
+                  )}
                 </button>
-              )}
-            </div>
-            {!isFolded && (
+              </div>
               <TodoItems
                 items={items}
                 color={c}
@@ -140,13 +101,23 @@ export default function DayList({ date, categories, todos, reactions, myId, onOp
                 myId={myId}
                 onOpenTodo={onOpenTodo}
                 onReact={onReact}
+                onAddClick={canAdd ? openAdd : undefined}
                 adding={adding === cat.id ? (title) => addTodo(title, date, cat.id) : null}
                 onAddDone={() => setAdding(null)}
               />
-            )}
-          </section>
-        )
-      })}
+            </section>
+          )
+        })}
+        {Array.from({ length: Math.max(0, MIN_ROWS - used) }, (_, i) => (
+          <div key={i} className="p-group p-filler" aria-hidden="true">
+            <div className="p-label" />
+            <div className="p-row">
+              <div className="p-task" />
+              <div className="p-status" />
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -168,13 +139,15 @@ interface ItemsProps {
   myId?: string | null
   onOpenTodo?: (id: string) => void
   onReact?: (todoId: string, emoji: string | null) => void
+  /** tapping the empty row of a category with no todos yet */
+  onAddClick?: () => void
   /** set while the new-todo input is open in this category */
   adding: ((title: string) => void) | null
   onAddDone: () => void
 }
 
-/** One category's todos; in my own list they can be dragged into a new order. */
-function TodoItems({ items, color: c, editable, reactions, myId, onOpenTodo, onReact, adding, onAddDone }: ItemsProps) {
+/** One category's rows on the sheet; in my own list they can be dragged into a new order. */
+function TodoItems({ items, color: c, editable, reactions, myId, onOpenTodo, onReact, onAddClick, adding, onAddDone }: ItemsProps) {
   const dnd = useDragSort(editable ? items.map((t) => t.id) : [], reorderTodos)
   // my own routines; a friend's list shows just the icon
   const { routines } = useStore()
@@ -182,55 +155,65 @@ function TodoItems({ items, color: c, editable, reactions, myId, onOpenTodo, onR
   // a tap that ends a drag shouldn't also tick or open the todo
   const tap = (fn: () => void) => () => !dnd.justDragged.current && fn()
   return (
-    <ul>
-      {items.map((t) => (
-        <li
-          key={t.id}
-          ref={editable ? dnd.register(t.id) : undefined}
-          className={`todo ${t.done ? 'done' : ''} ${dnd.dragging === t.id ? 'dragging' : ''}`}
-          style={dnd.styleFor(t.id)}
-        >
-          <div className="todo-row" onPointerDown={editable ? dnd.start(t.id) : undefined} onContextMenu={(e) => editable && e.preventDefault()}>
+    <ul className="p-rows">
+      {items.map((t) => {
+        const started = !t.done && t.focus_seconds > 0
+        return (
+          <li
+            key={t.id}
+            ref={editable ? dnd.register(t.id) : undefined}
+            className={`todo p-row ${t.done ? 'done' : ''} ${dnd.dragging === t.id ? 'dragging' : ''}`}
+            style={dnd.styleFor(t.id)}
+          >
+            <div className="p-task" onPointerDown={editable ? dnd.start(t.id) : undefined} onContextMenu={(e) => editable && e.preventDefault()}>
+              <span className="p-hl todo-title" style={c} onClick={tap(() => onOpenTodo?.(t.id))}>
+                {t.time && <span className="todo-time">{timeLabel(t.time)}</span>}
+                <span className="todo-text">{t.title}</span>
+                {t.routine_id && (
+                  <span className="todo-repeat" title="반복">
+                    <RepeatIcon />
+                    {repeatDays.get(t.routine_id) && <span>{shortRepeat(repeatDays.get(t.routine_id)!)}</span>}
+                  </span>
+                )}
+                {t.focus_seconds > 0 && (
+                  <span className="tomato">
+                    {' '}
+                    <TomatoIcon /> {formatDuration(t.focus_seconds)}
+                  </span>
+                )}
+              </span>
+              {t.done && <ReactionBar list={reactions?.get(t.id) ?? []} myId={myId} onPick={onReact && ((e) => onReact(t.id, e))} />}
+            </div>
             <button
-              className="check"
-              style={c}
+              className="p-status"
               disabled={!editable}
               onClick={tap(() => updateTodo(t.id, { done: !t.done }))}
               aria-label={t.done ? '완료 취소' : '완료'}
+              title={started ? '진행 중' : undefined}
             >
-              {t.done && <CheckMarkIcon />}
+              {t.done ? <HandCheckIcon /> : started ? <HandTriangleIcon /> : null}
             </button>
-            <span className="todo-title" onClick={tap(() => onOpenTodo?.(t.id))}>
-              {t.time && <span className="todo-time">{timeLabel(t.time)}</span>}
-              <span className="todo-text">{t.title}</span>
-              {t.routine_id && (
-                <span className="todo-repeat" title="반복">
-                  <RepeatIcon />
-                  {repeatDays.get(t.routine_id) && <span>{shortRepeat(repeatDays.get(t.routine_id)!)}</span>}
-                </span>
-              )}
-              {t.focus_seconds > 0 && (
-                <span className="tomato">
-                  {' '}
-                  <TomatoIcon /> {formatDuration(t.focus_seconds)}
-                </span>
-              )}
-            </span>
-            {editable && (
-              <button className="more" onClick={tap(() => onOpenTodo?.(t.id))} aria-label="더보기">
-                <MoreIcon />
-              </button>
-            )}
-          </div>
-          {t.done && <ReactionBar list={reactions?.get(t.id) ?? []} myId={myId} onPick={onReact && ((e) => onReact(t.id, e))} />}
-        </li>
-      ))}
+          </li>
+        )
+      })}
       {adding && (
-        <li className="todo">
-          <div className="todo-row" style={c}>
-            <span className="check" />
+        <li className="todo p-row">
+          <div className="p-task" style={c}>
             <NewTodoInput onSubmit={adding} onDone={onAddDone} />
           </div>
+          <span className="p-status" />
+        </li>
+      )}
+      {!items.length && !adding && (
+        <li className="p-row">
+          <button className="p-task p-empty" disabled={!onAddClick} onClick={onAddClick}>
+            {onAddClick && (
+              <>
+                <PlusIcon /> 할 일 추가
+              </>
+            )}
+          </button>
+          <span className="p-status" />
         </li>
       )}
     </ul>
