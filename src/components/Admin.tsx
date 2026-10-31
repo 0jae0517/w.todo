@@ -181,7 +181,10 @@ function Users() {
                     {u.name || u.username || '(프로필 없음)'}
                     {u.username && <span className="muted"> @{u.username}</span>}
                   </strong>
-                  <span className="muted">{u.email ?? '이메일 없음'}</span>
+                  <span className="muted">
+                    {u.email ?? '이메일 없음'}
+                    {u.email_unverified && ' (카카오, 미인증)'}
+                  </span>
                 </span>
                 <span className="admin-badges">
                   {u.admin && <span className="badge">관리자</span>}

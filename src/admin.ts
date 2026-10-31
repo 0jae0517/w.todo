@@ -67,6 +67,8 @@ export interface AdminUser {
   banned_until: string | null
   todos: number
   admin: boolean
+  /** the email came from Kakao and isn't verified, so it isn't the account's login email */
+  email_unverified: boolean
 }
 
 export async function adminUsers(q = '', skip = 0) {
