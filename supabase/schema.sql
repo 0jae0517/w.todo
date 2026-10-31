@@ -431,24 +431,28 @@ end
 $$;
 
 -- 사용자 목록 (이메일·아이디·이름으로 검색, 최근 가입 순)
-create or replace function public.admin_users(q text default '', lim int default 50, skip int default 0)
+-- 카카오는 인증 안 된 이메일을 계정 이메일 칸에 넣지 않아서, 그때는 카카오가 준 이메일을 대신 보여줌 (email_unverified = true)
+drop function if exists public.admin_users(text, int, int);
+create function public.admin_users(q text default '', lim int default 50, skip int default 0)
 returns table (
   id uuid, email text, username text, name text, provider text,
   created_at timestamptz, last_sign_in_at timestamptz, banned_until timestamptz,
-  todos bigint, admin boolean
+  todos bigint, admin boolean, email_unverified boolean
 )
 language plpgsql stable security definer set search_path = public as $$
 begin
   if not is_admin() then raise exception 'admin only'; end if;
   return query
-    select u.id, u.email::text, p.username, p.name, coalesce(u.raw_app_meta_data->>'provider', 'email'),
+    select u.id, coalesce(nullif(u.email, ''), u.raw_user_meta_data->>'email')::text, p.username, p.name, coalesce(u.raw_app_meta_data->>'provider', 'email'),
            u.created_at, u.last_sign_in_at, u.banned_until,
            (select count(*) from todos t where t.user_id = u.id and not t.deleted),
-           exists (select 1 from admins a where a.user_id = u.id)
+           exists (select 1 from admins a where a.user_id = u.id),
+           nullif(u.email, '') is null and u.raw_user_meta_data->>'email' is not null
     from auth.users u
     left join profiles p on p.id = u.id
     where coalesce(q, '') = ''
-       or u.email ilike '%' || q || '%' or p.username ilike '%' || q || '%' or p.name ilike '%' || q || '%'
+       or u.email ilike '%' || q || '%' or u.raw_user_meta_data->>'email' ilike '%' || q || '%'
+       or p.username ilike '%' || q || '%' or p.name ilike '%' || q || '%'
     order by u.created_at desc
     limit least(lim, 200) offset skip;
 end
