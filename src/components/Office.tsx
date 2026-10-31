@@ -192,8 +192,8 @@ export default function Office({ onOpenFriend }: { onOpenFriend: (p: Profile) =>
       )}
 
       <label className="office-toggle">
-        <input type="checkbox" checked={!hidden} onChange={(e) => setOfficeHidden(!e.target.checked)} />
-        친구들에게 내 모습 보이기
+        <input type="checkbox" checked={hidden} onChange={(e) => setOfficeHidden(e.target.checked)} />
+        내 모습 숨기기
       </label>
 
       {selected && (
