@@ -7,6 +7,7 @@ import type { Category, Todo } from '../types'
 import Calendar, { type DayStat } from './Calendar'
 import DayList from './DayList'
 import Heatmap from './Heatmap'
+import { ReportLink } from './Admin'
 import { ChevronLeftIcon } from './Icons'
 
 export const FOLLOW_LABEL = { following: '팔로잉', requested: '요청됨', none: '팔로우' }
@@ -142,6 +143,7 @@ export default function FriendView({ friend, onBack }: { friend: Profile; onBack
           )}
         </>
       )}
+      {myId && myId !== friend.id && <ReportLink type="profile" id={friend.id} />}
     </div>
   )
 }

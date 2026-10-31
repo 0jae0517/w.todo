@@ -382,3 +382,185 @@ end
 $$;
 revoke execute on function public.delete_account() from public, anon;
 grant execute on function public.delete_account() to authenticated;
+
+-- ============================================================
+-- 관리자: admins 표에 있는 계정만 관리자 화면(내 정보 → 관리자)을 쓸 수 있음
+-- 관리자 지정은 앱에서 할 수 없고, 맨 아래처럼 SQL Editor 에서만
+-- ============================================================
+create table if not exists public.admins (
+  user_id    uuid primary key references auth.users on delete cascade,
+  created_at timestamptz not null default now()
+);
+alter table public.admins enable row level security;
+revoke all on public.admins from anon, authenticated;
+
+create or replace function public.is_admin() returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from admins where user_id = auth.uid())
+$$;
+-- 로그인 안 한 사람도 공지를 읽을 때 이 함수를 거치므로 anon 도 실행 가능 (항상 false)
+grant execute on function public.is_admin() to anon, authenticated;
+
+-- 현황: 가입자, 활동한 사람, 할 일, 템플릿, 처리 안 한 신고, 최근 14일 가입자 수
+create or replace function public.admin_stats() returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+begin
+  if not is_admin() then raise exception 'admin only'; end if;
+  return jsonb_build_object(
+    'users',        (select count(*) from auth.users),
+    'new_today',    (select count(*) from auth.users where created_at >= date_trunc('day', now() at time zone 'Asia/Seoul') at time zone 'Asia/Seoul'),
+    'new_7d',       (select count(*) from auth.users where created_at >= now() - interval '7 days'),
+    'new_30d',      (select count(*) from auth.users where created_at >= now() - interval '30 days'),
+    'active_1d',    (select count(distinct user_id) from todos where synced_at >= now() - interval '1 day'),
+    'active_7d',    (select count(distinct user_id) from todos where synced_at >= now() - interval '7 days'),
+    'active_30d',   (select count(distinct user_id) from todos where synced_at >= now() - interval '30 days'),
+    'profiles',     (select count(*) from profiles),
+    'todos',        (select count(*) from todos where not deleted),
+    'todos_done',   (select count(*) from todos where not deleted and done),
+    'focus_hours',  (select coalesce(round(sum(seconds) / 3600.0), 0) from sessions where not deleted),
+    'templates',    (select count(*) from templates),
+    'open_reports', (select count(*) from reports where status = 'open'),
+    'signups', (
+      select jsonb_agg(jsonb_build_object('day', d::date, 'count', (
+        select count(*) from auth.users u where (u.created_at at time zone 'Asia/Seoul')::date = d::date
+      )) order by d)
+      from generate_series((now() at time zone 'Asia/Seoul')::date - 13, (now() at time zone 'Asia/Seoul')::date, interval '1 day') d
+    )
+  );
+end
+$$;
+
+-- 사용자 목록 (이메일·아이디·이름으로 검색, 최근 가입 순)
+create or replace function public.admin_users(q text default '', lim int default 50, skip int default 0)
+returns table (
+  id uuid, email text, username text, name text, provider text,
+  created_at timestamptz, last_sign_in_at timestamptz, banned_until timestamptz,
+  todos bigint, admin boolean
+)
+language plpgsql stable security definer set search_path = public as $$
+begin
+  if not is_admin() then raise exception 'admin only'; end if;
+  return query
+    select u.id, u.email::text, p.username, p.name, coalesce(u.raw_app_meta_data->>'provider', 'email'),
+           u.created_at, u.last_sign_in_at, u.banned_until,
+           (select count(*) from todos t where t.user_id = u.id and not t.deleted),
+           exists (select 1 from admins a where a.user_id = u.id)
+    from auth.users u
+    left join profiles p on p.id = u.id
+    where coalesce(q, '') = ''
+       or u.email ilike '%' || q || '%' or p.username ilike '%' || q || '%' or p.name ilike '%' || q || '%'
+    order by u.created_at desc
+    limit least(lim, 200) offset skip;
+end
+$$;
+
+-- 이용 정지 (days 가 null 이면 정지 풀기, 0 이면 영구). 정지된 계정은 로그인과 토큰 갱신이 막혀 길어도 1시간 안에 로그아웃됨
+create or replace function public.admin_set_ban(target uuid, days int) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not is_admin() then raise exception 'admin only'; end if;
+  if target = auth.uid() or exists (select 1 from admins where user_id = target) then
+    raise exception '관리자 계정은 정지할 수 없어요';
+  end if;
+  update auth.users set banned_until = case
+    when days is null then null
+    when days = 0 then now() + interval '100 years'
+    else now() + make_interval(days => days)
+  end where id = target;
+end
+$$;
+
+-- 계정 삭제 (회원 탈퇴와 같이 그 사람의 데이터가 모두 지워짐)
+create or replace function public.admin_delete_user(target uuid) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not is_admin() then raise exception 'admin only'; end if;
+  if target = auth.uid() or exists (select 1 from admins where user_id = target) then
+    raise exception '관리자 계정은 여기서 삭제할 수 없어요';
+  end if;
+  delete from auth.users where id = target;
+end
+$$;
+
+revoke execute on function public.admin_stats() from public, anon;
+revoke execute on function public.admin_users(text, int, int) from public, anon;
+revoke execute on function public.admin_set_ban(uuid, int) from public, anon;
+revoke execute on function public.admin_delete_user(uuid) from public, anon;
+grant execute on function public.admin_stats() to authenticated;
+grant execute on function public.admin_users(text, int, int) to authenticated;
+grant execute on function public.admin_set_ban(uuid, int) to authenticated;
+grant execute on function public.admin_delete_user(uuid) to authenticated;
+
+-- 관리자는 누구의 템플릿이든 목록에서 내리거나 지울 수 있음
+drop policy if exists "admin templates update" on public.templates;
+create policy "admin templates update" on public.templates for update to authenticated
+  using (public.is_admin()) with check (public.is_admin());
+drop policy if exists "admin templates delete" on public.templates;
+create policy "admin templates delete" on public.templates for delete to authenticated using (public.is_admin());
+
+-- 신고: 템플릿이나 사용자(프로필)를 신고하면 관리자가 확인
+create table if not exists public.reports (
+  id          uuid primary key default gen_random_uuid(),
+  reporter_id uuid default auth.uid() references auth.users on delete set null,
+  target_type text not null check (target_type in ('template', 'profile')),
+  target_id   uuid not null,
+  reason      text not null check (reason in ('spam', 'abuse', 'sexual', 'privacy', 'other')),
+  detail      text not null default '' check (char_length(detail) <= 500),
+  status      text not null default 'open' check (status in ('open', 'resolved', 'dismissed')),
+  created_at  timestamptz not null default now(),
+  handled_at  timestamptz
+);
+-- 같은 사람이 같은 대상을 처리 전에 여러 번 신고하지 못하게
+create unique index if not exists reports_once_idx on public.reports (reporter_id, target_type, target_id) where status = 'open';
+create index if not exists reports_status_idx on public.reports (status, created_at desc);
+
+alter table public.reports enable row level security;
+drop policy if exists "report" on public.reports;
+create policy "report" on public.reports for insert to authenticated
+  with check (reporter_id = auth.uid() and status = 'open' and handled_at is null);
+drop policy if exists "reports readable" on public.reports;
+create policy "reports readable" on public.reports for select to authenticated
+  using (reporter_id = auth.uid() or public.is_admin());
+drop policy if exists "admin reports update" on public.reports;
+create policy "admin reports update" on public.reports for update to authenticated
+  using (public.is_admin()) with check (public.is_admin());
+drop policy if exists "admin reports delete" on public.reports;
+create policy "admin reports delete" on public.reports for delete to authenticated using (public.is_admin());
+grant select, insert, update, delete on public.reports to authenticated;
+
+-- 공지: 켜 둔 공지는 할 일 화면 위에 보임 (로그인 안 해도)
+create table if not exists public.announcements (
+  id         uuid primary key default gen_random_uuid(),
+  title      text not null check (char_length(title) between 1 and 60),
+  body       text not null default '' check (char_length(body) <= 1000),
+  active     boolean not null default true,
+  created_at timestamptz not null default now()
+);
+alter table public.announcements enable row level security;
+drop policy if exists "announcements readable" on public.announcements;
+create policy "announcements readable" on public.announcements for select to anon, authenticated
+  using (active or public.is_admin());
+drop policy if exists "admin announcements" on public.announcements;
+create policy "admin announcements" on public.announcements for all to authenticated
+  using (public.is_admin()) with check (public.is_admin());
+grant select on public.announcements to anon, authenticated;
+grant insert, update, delete on public.announcements to authenticated;
+
+-- 관리자 지정: 이 이메일로 가입한 계정을 관리자로 (Gmail 은 점을 무시하니 점·대소문자 상관없이 찾음)
+-- 다른 계정을 관리자로 하려면 이메일만 바꿔서 이 부분을 다시 실행
+do $$
+declare admin_email text := 'w.todo.official@gmail.com';
+begin
+  insert into public.admins (user_id)
+  select id from auth.users
+  where lower(email) = lower(admin_email)
+     or (split_part(lower(email), '@', 2) = 'gmail.com'
+         and replace(split_part(lower(email), '@', 1), '.', '') = replace(split_part(lower(admin_email), '@', 1), '.', '')
+         and split_part(lower(admin_email), '@', 2) = 'gmail.com')
+  on conflict do nothing;
+  if not exists (select 1 from public.admins) then
+    raise notice '% 로 가입한 계정이 아직 없어요. 앱에서 먼저 가입한 뒤 다시 실행하세요.', admin_email;
+  end if;
+end $$;
+
+notify pgrst, 'reload schema';

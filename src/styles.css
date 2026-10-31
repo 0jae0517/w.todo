@@ -899,3 +899,59 @@ button.p-status:disabled { cursor: default; }
 :root[data-theme='chalk'] .p-status { border-left-style: dashed; }
 :root[data-theme='chalk'] .p-group, :root[data-theme='chalk'] .todo.dragging.p-row { background: transparent; }
 :root[data-theme='chalk'] .p-cat { font-weight: 400; }
+
+/* ---- 관리자 ---- */
+.admin .seg { margin-bottom: 14px; }
+.admin .seg button { font-size: 13px; }
+.admin-alert { width: 100%; padding: 11px 14px; margin-bottom: 10px; border-radius: 12px; background: var(--surface); color: var(--danger); font-weight: 600; font-size: 14px; text-align: left; }
+.admin-bars { display: flex; align-items: flex-end; gap: 4px; height: 110px; padding-top: 16px; }
+.admin-bar { flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 3px; min-width: 0; }
+.admin-bar i { display: block; width: 100%; min-height: 2px; border-radius: 4px 4px 0 0; background: var(--accent); }
+.admin-bar-n { font-size: 10px; color: var(--muted); }
+.admin-bar-d { font-size: 10px; color: var(--muted); }
+.admin-list { list-style: none; margin: 0; padding: 0; }
+.admin-list > li { border-bottom: 1px solid var(--line); padding: 10px 0; }
+.admin-list > li:last-child { border-bottom: 0; }
+.admin-item { width: 100%; display: flex; align-items: center; gap: 10px; text-align: left; }
+.admin-item-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; text-align: left; }
+.admin-item-main strong { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.admin-item-main .muted { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.admin-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+.admin-badges { display: flex; gap: 4px; flex: none; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 99px; background: var(--surface); color: var(--muted); font-size: 11px; font-weight: 600; white-space: nowrap; }
+.badge.warn { color: var(--danger); }
+.admin-detail { margin-top: 10px; padding: 12px; border-radius: 12px; background: var(--surface); }
+.admin-detail dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin: 0 0 12px; font-size: 13px; }
+.admin-detail dt { color: var(--muted); }
+.admin-detail dd { margin: 0; }
+.admin-detail .actions { margin-bottom: 0; }
+.admin-detail .actions > button { background: var(--bg); min-width: 80px; padding: 10px; font-size: 13px; }
+.admin-row-actions { margin: 8px 0 0; }
+.admin-row-actions > button { min-width: 0; padding: 8px 10px; font-size: 13px; flex: 0 1 auto; }
+.actions > button.danger { width: auto; }
+.admin-report-head { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.admin-report-head strong { font-size: 14px; }
+.admin-report-reason { margin: 6px 0 2px; font-size: 14px; white-space: pre-wrap; word-break: break-word; }
+.admin-report-meta { margin: 0; }
+.admin-notice-body { font-size: 13px; white-space: pre-wrap; word-break: break-word; }
+.admin-notice-form { margin-bottom: 8px; }
+.admin-check { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.admin-check input { width: auto; }
+.login textarea { padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); outline: none; font: inherit; color: inherit; resize: vertical; }
+.admin-open { width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; margin: 10px 0; border-radius: 12px; background: var(--surface); font-size: 14px; font-weight: 600; }
+.admin-open .muted { display: flex; align-items: center; gap: 6px; font-weight: 400; }
+.admin-open svg { width: 18px; height: 18px; }
+
+/* 신고하기 */
+.report-link { display: block; margin: 18px auto 0; align-self: center; }
+.report-reasons { flex-wrap: wrap; overflow: visible; }
+
+/* 공지 */
+.notice-banner { display: flex; align-items: flex-start; gap: 6px; margin: 0 16px 8px; padding: 10px 6px 10px 14px; border-radius: 12px; background: var(--surface); border-left: 3px solid var(--accent); }
+.notice-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; text-align: left; padding: 3px 0; }
+.notice-text strong { font-size: 14px; }
+.notice-body { font-size: 13px; color: var(--muted); white-space: pre-wrap; word-break: break-word; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+.notice-body.open { display: block; }
+.notice-banner .icon-btn { width: 32px; height: 32px; flex: none; }
+.notice-banner .icon-btn svg { width: 18px; height: 18px; }
+.admin .tile { background: var(--surface); }
