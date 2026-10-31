@@ -85,3 +85,10 @@ export const OfficeIcon = () => (
 export const TemplateIcon = () => (
   <svg {...base}><rect x="7" y="3.5" width="13" height="13" rx="3" /><path d="M17 20.5H7a3 3 0 01-3-3v-10" /></svg>
 )
+/** Planner status marks, drawn like a quick pen stroke. */
+export const HandCheckIcon = () => (
+  <svg {...base} strokeWidth={2.8}><path d="M3.5 12.8c1.6 1.1 3.4 3.3 5 6.2.4.7.9.7 1.3 0C12.6 13.2 16.3 8 20.8 3.8" /></svg>
+)
+export const HandTriangleIcon = () => (
+  <svg {...base} strokeWidth={2.6}><path d="M12.3 4.2c-.4-.6-.8-.6-1.1 0L4 18.6c-.3.7 0 1 .7 1 4.8-.2 9.7-.3 14.6-.1.7 0 1-.4.6-1z" /></svg>
+)
