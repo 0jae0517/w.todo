@@ -7,9 +7,10 @@ import { FriendsIcon, LockIcon, PersonIcon, PlusIcon, ShareIcon, TrashIcon } fro
 import Sheet from './Sheet'
 import { TemplateMaker } from './Templates'
 
-export default function CategorySheet({ categories, onClose }: { categories: Category[]; onClose: () => void }) {
+/** `focus`: opened by tapping that category on the todo list, so it is shown first with its colours open */
+export default function CategorySheet({ categories, focus, onClose }: { categories: Category[]; focus?: string; onClose: () => void }) {
   const [name, setName] = useState('')
-  const [picking, setPicking] = useState<string | null>(null)
+  const [picking, setPicking] = useState<string | null>(focus ?? null)
   const [visFor, setVisFor] = useState<string | null>(null)
   const [sharing, setSharing] = useState<Category | null>(null)
   const add = () => {
@@ -25,7 +26,7 @@ export default function CategorySheet({ categories, onClose }: { categories: Cat
       <p className="sheet-sub">순서는 할 일 화면에서 카테고리 이름을 길게 눌러 끌면 바뀌어요.</p>
       <ul className="cat-list">
         {categories.map((c) => (
-          <li key={c.id}>
+          <li key={c.id} className={c.id === focus ? 'focused' : ''} ref={c.id === focus ? (el) => el?.scrollIntoView({ block: 'nearest' }) : undefined}>
             <div className="cat-row">
               <button
                 className="swatch"
@@ -88,7 +89,7 @@ export default function CategorySheet({ categories, onClose }: { categories: Cat
       </ul>
       <div className="cat-add">
         <input
-          autoFocus
+          autoFocus={!focus}
           placeholder="새 카테고리 추가"
           value={name}
           onChange={(e) => setName(e.target.value)}

@@ -19,6 +19,8 @@ interface Props {
   onOpenTodo?: (id: string) => void
   /** friend's list: react to a finished todo */
   onReact?: (todoId: string, emoji: string | null) => void
+  /** own list: tapping a category opens it for editing */
+  onEditCategory?: (id: string) => void
 }
 
 const ORPHAN: Category = {
@@ -36,7 +38,7 @@ const ORPHAN: Category = {
 /** rows the sheet is padded to, so a short day still looks like a planner page */
 const MIN_ROWS = 10
 
-export default function DayList({ date, categories, todos, reactions, myId, onOpenTodo, onReact }: Props) {
+export default function DayList({ date, categories, todos, reactions, myId, onOpenTodo, onReact, onEditCategory }: Props) {
   const [adding, setAdding] = useState<string | null>(null)
   const editable = !!onOpenTodo
   const known = new Set(categories.map((c) => c.id))
@@ -50,8 +52,8 @@ export default function DayList({ date, categories, todos, reactions, myId, onOp
   }
 
   const itemsOf = (cat: Category) => (cat === ORPHAN ? orphans : todos.filter((t) => t.category_id === cat.id)).sort(byPosition)
-  // every category takes at least one row (an empty one invites a first todo)
-  const used = groups.reduce((n, cat) => n + Math.max(1, itemsOf(cat).length + (adding === cat.id ? 1 : 0)), 0)
+  // in my own list each category ends with a blank line to write the next todo on
+  const used = groups.reduce((n, cat) => n + itemsOf(cat).length + (editable && cat !== ORPHAN ? 1 : 0), 0)
 
   return (
     <div className="planner">
@@ -61,10 +63,7 @@ export default function DayList({ date, categories, todos, reactions, myId, onOp
           const items = itemsOf(cat)
           const c = { '--c': cat.color, '--ink': inkFor(cat.color) } as React.CSSProperties
           const canAdd = editable && cat !== ORPHAN
-          const openAdd = () => {
-            if (dnd.justDragged.current) return
-            setAdding(adding === cat.id ? null : cat.id)
-          }
+          const canEdit = !!onEditCategory && cat !== ORPHAN
           return (
             <section
               key={cat.id || 'orphan'}
@@ -75,10 +74,11 @@ export default function DayList({ date, categories, todos, reactions, myId, onOp
               <div className="p-label">
                 <button
                   className="p-cat"
-                  disabled={!canAdd}
+                  disabled={!canEdit}
                   onPointerDown={canAdd ? dnd.start(cat.id) : undefined}
                   onContextMenu={(e) => editable && e.preventDefault()}
-                  onClick={openAdd}
+                  onClick={() => !dnd.justDragged.current && onEditCategory?.(cat.id)}
+                  aria-label={canEdit ? `${cat.name} 카테고리 수정` : undefined}
                 >
                   <span className="p-cat-name">{cat.name}</span>
                   {cat.visibility === 'private' && (
@@ -101,7 +101,7 @@ export default function DayList({ date, categories, todos, reactions, myId, onOp
                 myId={myId}
                 onOpenTodo={onOpenTodo}
                 onReact={onReact}
-                onAddClick={canAdd ? openAdd : undefined}
+                onAddClick={canAdd ? () => setAdding(cat.id) : undefined}
                 adding={adding === cat.id ? (title) => addTodo(title, date, cat.id) : null}
                 onAddDone={() => setAdding(null)}
               />
@@ -139,7 +139,7 @@ interface ItemsProps {
   myId?: string | null
   onOpenTodo?: (id: string) => void
   onReact?: (todoId: string, emoji: string | null) => void
-  /** tapping the empty row of a category with no todos yet */
+  /** tapping the blank line under a category's todos */
   onAddClick?: () => void
   /** set while the new-todo input is open in this category */
   adding: ((title: string) => void) | null
@@ -202,14 +202,11 @@ function TodoItems({ items, color: c, editable, reactions, myId, onOpenTodo, onR
           <span className="p-status" />
         </li>
       )}
-      {!items.length && !adding && (
+      {onAddClick && !adding && (
         <li className="p-row">
-          <button className="p-task p-empty" disabled={!onAddClick} onClick={onAddClick}>
-            {onAddClick && (
-              <>
-                <PlusIcon /> 할 일 추가
-              </>
-            )}
+          <button className="p-task p-empty" onClick={onAddClick} aria-label="할 일 추가">
+            <PlusIcon />
+            {!items.length && ' 할 일 추가'}
           </button>
           <span className="p-status" />
         </li>
