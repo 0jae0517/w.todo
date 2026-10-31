@@ -10,9 +10,35 @@ import type { Category, Course, FocusSession, Kind, Routine, Row, Todo, Visibili
 
 const KEY = 'todo-app:v1'
 
-/** The app's blue was #4f7cff until 2026-10; categories saved with it show the new blue. */
-export const shownColor = (c: string) => (c.toLowerCase() === '#4f7cff' ? PALETTE[0] : c)
-export const PALETTE = ['#5e6ad2', '#ff6b6b', '#ffb020', '#2fbf71', '#a066ff', '#ff7ac6', '#17b5c4', '#8a8f98']
+/** Pastel category colours (2026-10-31). */
+export const PALETTE = [
+  '#fff699', '#fee7c3', '#ffcfa1', '#faada5',
+  '#e9ed98', '#b6eea7', '#a6f5d8', '#b7e7f3',
+  '#a1c4fc', '#d5bcfe', '#ffbdfb', '#ffb8cc',
+  '#bcaea1', '#d2c09a', '#dddddd', '#66747f',
+]
+/** Colours from the earlier palettes, shown as their nearest pastel (the saved value is left alone). */
+const OLD_COLORS: Record<string, string> = {
+  '#4f7cff': '#a1c4fc',
+  '#5e6ad2': '#a1c4fc',
+  '#ff6b6b': '#faada5',
+  '#ffb020': '#ffcfa1',
+  '#2fbf71': '#b6eea7',
+  '#a066ff': '#d5bcfe',
+  '#ff7ac6': '#ffb8cc',
+  '#17b5c4': '#b7e7f3',
+  '#8a8f98': '#dddddd',
+}
+export const shownColor = (c: string) => OLD_COLORS[c.toLowerCase()] ?? c
+
+/** Dark or white text, whichever reads better on `color` (a #rrggbb). */
+export function inkFor(color: string) {
+  const n = parseInt(color.slice(1, 7), 16)
+  if (Number.isNaN(n)) return '#1c1d21'
+  const lin = (v: number) => ((v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)
+  const l = 0.2126 * lin(n >> 16) + 0.7152 * lin((n >> 8) & 255) + 0.0722 * lin(n & 255)
+  return l > 0.3 ? '#1c1d21' : '#ffffff'
+}
 
 interface Persisted {
   categories: Record<string, Category>
@@ -95,7 +121,7 @@ function derive(): State {
     sessions: Object.values(db.sessions)
       .filter((s) => !s.deleted)
       .sort((a, b) => a.started_at.localeCompare(b.started_at)),
-    courses: Object.values(db.courses).filter((c) => !c.deleted),
+    courses: Object.values(db.courses).filter((c) => !c.deleted).map((c) => ({ ...c, color: shownColor(c.color) })),
   }
 }
 

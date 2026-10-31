@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { WEEKDAYS, timeLabel, todayKey } from '../date'
-import { PALETTE, deleteCourse, saveCourse, setTerm, useStore } from '../store'
+import { PALETTE, inkFor, deleteCourse, saveCourse, setTerm, useStore } from '../store'
 import { classesOn, currentTerm, termLabel, toMinutes, type ClassOnDay } from '../timetable'
 import type { Course, Slot } from '../types'
 import { CloseIcon, PencilIcon } from './Icons'
@@ -61,6 +61,7 @@ export default function Timetable() {
                     top: ((toMinutes(slot.start) - first * 60) / 60) * HOUR,
                     height: Math.max(22, ((toMinutes(slot.end) - toMinutes(slot.start)) / 60) * HOUR - 2),
                     background: course.color,
+                    color: inkFor(course.color),
                   }}
                   onClick={() => setEditing(course)}
                 >

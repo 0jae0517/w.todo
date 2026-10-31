@@ -74,6 +74,13 @@ export default function CategorySheet({ categories, onClose }: { categories: Cat
                     aria-label={p}
                   />
                 ))}
+                <HexInput
+                  initial={c.color}
+                  onPick={(hex) => {
+                    updateCategory(c.id, { color: hex })
+                    setPicking(null)
+                  }}
+                />
               </div>
             )}
           </li>
@@ -92,6 +99,43 @@ export default function CategorySheet({ categories, onClose }: { categories: Cat
         </button>
       </div>
     </Sheet>
+  )
+}
+
+/** "#abc", "abc", "#aabbcc" or "aabbcc" -> "#aabbcc"; null if it isn't a colour */
+export function parseHex(v: string) {
+  const m = v.trim().replace(/^#/, '').toLowerCase()
+  if (/^[0-9a-f]{3}$/.test(m)) return '#' + [...m].map((x) => x + x).join('')
+  if (/^[0-9a-f]{6}$/.test(m)) return '#' + m
+  return null
+}
+
+/** Type any hex colour for a category. */
+function HexInput({ initial, onPick }: { initial: string; onPick: (hex: string) => void }) {
+  const [value, setValue] = useState(initial.replace(/^#/, ''))
+  const hex = parseHex(value)
+  return (
+    <div className="hex-row">
+      <span className="swatch" style={{ background: hex ?? 'transparent' }} aria-hidden="true" />
+      <label className={`hex-field ${value && !hex ? 'bad' : ''}`}>
+        #
+        <input
+          value={value}
+          maxLength={7}
+          placeholder="ffb8cc"
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck={false}
+          enterKeyHint="done"
+          aria-label="헥사코드"
+          onChange={(e) => setValue(e.target.value.replace(/^#/, ''))}
+          onKeyDown={(e) => e.key === 'Enter' && hex && onPick(hex)}
+        />
+      </label>
+      <button className="hex-apply" disabled={!hex} onClick={() => hex && onPick(hex)}>
+        적용
+      </button>
+    </div>
   )
 }
 
