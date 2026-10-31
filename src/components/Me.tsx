@@ -262,7 +262,7 @@ function PerCategory({ todos, categories }: { todos: Todo[]; categories: Categor
       <ul className="rows">
         {perCat.map(({ cat, done, total, focus }) => (
           <li key={cat.id}>
-            <span style={{ color: cat.color, fontWeight: 700 }}>{cat.name}</span>
+            <span className="cat-dot-name"><i style={{ background: cat.color }} />{cat.name}</span>
             <span className="muted">{focus > 0 && <Focus seconds={focus} />}</span>
             <span>{done} / {total}</span>
           </li>

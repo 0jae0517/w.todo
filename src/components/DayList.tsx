@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { timeLabel } from '../date'
 import { formatDuration } from '../pomodoro'
 import type { Reaction } from '../social'
-import { addTodo, reorderCategories, reorderTodos, updateTodo, useStore } from '../store'
+import { addTodo, inkFor, reorderCategories, reorderTodos, updateTodo, useStore } from '../store'
 import type { Category, Todo } from '../types'
 import { HandCircleIcon, LockIcon, PersonIcon, PlusIcon, RepeatIcon, TomatoIcon } from './Icons'
 import ReactionBar from './ReactionBar'
@@ -59,7 +59,7 @@ export default function DayList({ date, categories, todos, reactions, myId, onOp
       <div className="planner-sheet">
         {groups.map((cat) => {
           const items = itemsOf(cat)
-          const c = { '--c': cat.color } as React.CSSProperties
+          const c = { '--c': cat.color, '--ink': inkFor(cat.color) } as React.CSSProperties
           const canAdd = editable && cat !== ORPHAN
           const openAdd = () => {
             if (dnd.justDragged.current) return

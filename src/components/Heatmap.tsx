@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { addDays, dayLabel, fromKey, todayKey, weekOf } from '../date'
+import { inkFor } from '../store'
 import type { Category, Todo } from '../types'
 
 /** a year to scroll back through */
@@ -46,7 +47,7 @@ export default function Heatmap({ todos, categories }: { todos: Todo[]; categori
       <div className="chips">
         <button className={cat === ALL ? 'on' : ''} onClick={() => setCat(ALL)}>전체</button>
         {used.map((c) => (
-          <button key={c.id} className={cat === c.id ? 'on' : ''} style={cat === c.id ? { background: c.color } : undefined} onClick={() => setCat(c.id)}>
+          <button key={c.id} className={cat === c.id ? 'on' : ''} style={cat === c.id ? { background: c.color, color: inkFor(c.color) } : undefined} onClick={() => setCat(c.id)}>
             {c.name}
           </button>
         ))}
