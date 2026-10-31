@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { STATUS_LABEL } from './components/Account'
 import { NoticeBanner } from './components/Admin'
-import Calendar, { dayStats } from './components/Calendar'
+import Calendar, { type DayStat } from './components/Calendar'
 import CategorySheet from './components/CategorySheet'
 import DayList from './components/DayList'
 import FriendStrip from './components/FriendStrip'
@@ -51,7 +51,16 @@ export default function App() {
   useOfficePresence()
   const { notice, close: closeNotice } = useAnnouncement()
 
-  const stats = useMemo(() => dayStats(todos, categories), [todos, categories])
+  const stats = useMemo(() => {
+    const m = new Map<string, DayStat>()
+    for (const t of todos) {
+      const s = m.get(t.date) ?? { total: 0, left: 0 }
+      s.total++
+      if (!t.done) s.left++
+      m.set(t.date, s)
+    }
+    return m
+  }, [todos])
 
   const dayTodos = todos.filter((t) => t.date === selected)
   const reactions = useMyReactions(dayTodos.filter((t) => t.done).map((t) => t.id))

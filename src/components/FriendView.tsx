@@ -4,7 +4,7 @@ import { holidayName } from '../holidays'
 import { byTodo, followingIds, follow, friendData, react, reactionsFor, unfollow, unreact, type FollowState, type Profile, type Reaction } from '../social'
 import { currentUserId } from '../sync'
 import type { Category, Todo } from '../types'
-import Calendar, { dayStats } from './Calendar'
+import Calendar, { type DayStat } from './Calendar'
 import DayList from './DayList'
 import Heatmap from './Heatmap'
 import { ReportLink } from './Admin'
@@ -61,7 +61,16 @@ export default function FriendView({ friend, onBack }: { friend: Profile; onBack
     reactionsFor(friend.id, doneIds.split(',')).then(setReactions).catch(() => {})
   }, [friend.id, doneIds])
 
-  const stats = useMemo(() => dayStats(data.todos, data.categories), [data.todos, data.categories])
+  const stats = useMemo(() => {
+    const m = new Map<string, DayStat>()
+    for (const t of data.todos) {
+      const s = m.get(t.date) ?? { total: 0, left: 0 }
+      s.total++
+      if (!t.done) s.left++
+      m.set(t.date, s)
+    }
+    return m
+  }, [data.todos])
 
   const onReact = async (todoId: string, emoji: string | null) => {
     const before = reactions
