@@ -8,6 +8,7 @@ import { deleteAccount, signOut, syncNow, useSync } from '../sync'
 import { PRIVACY_URL } from '../native'
 import type { Category, Todo } from '../types'
 import { DeleteAccount, LoginPanel, PasswordForm, STATUS_LABEL } from './Account'
+import AdminSheet from './Admin'
 import FocusPattern from './FocusPattern'
 import { ProfileForm } from './Friends'
 import Heatmap from './Heatmap'
@@ -16,6 +17,7 @@ import Sheet from './Sheet'
 import Mascot from './Mascot'
 import { setTheme, useTheme, type Theme } from '../theme'
 import { setTimetableOn, useTimetableOn } from '../timetable'
+import { useIsAdmin } from '../admin'
 import { ChevronRightIcon, PersonIcon, SparkleIcon, TomatoIcon } from './Icons'
 import type { FollowTab } from './Friends'
 
@@ -50,6 +52,7 @@ export default function Me({ todos, categories, onOpenFollows }: { todos: Todo[]
   return (
     <div className="me">
       <AccountRow onOpenFollows={onOpenFollows} />
+      <AdminEntry />
       {ready && view !== 'recap' && (
         <button className="recap-open fresh" onClick={() => pick('recap')}>
           <span>
@@ -306,6 +309,24 @@ function dateLabel(k: string) {
   if (k === addDays(today, -1)) return '어제'
   const d = fromKey(k)
   return `${d.getMonth() + 1}/${d.getDate()} (${WEEKDAYS[d.getDay()]})`
+}
+
+/** Only admins see this; it opens the admin screen. */
+function AdminEntry() {
+  const admin = useIsAdmin()
+  const [open, setOpen] = useState(false)
+  if (!admin) return null
+  return (
+    <>
+      <button className="admin-open" onClick={() => setOpen(true)}>
+        관리자
+        <span className="muted">
+          현황 · 사용자 · 신고 <ChevronRightIcon />
+        </span>
+      </button>
+      {open && <AdminSheet onClose={() => setOpen(false)} />}
+    </>
+  )
 }
 
 const THEMES: [Theme, string][] = [

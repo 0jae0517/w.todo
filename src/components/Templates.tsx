@@ -17,6 +17,7 @@ import {
 } from '../templates'
 import type { Category } from '../types'
 import { CheckMarkIcon, GlobeIcon, LinkIcon, PlusIcon, RepeatIcon } from './Icons'
+import { ReportLink } from './Admin'
 import Sheet from './Sheet'
 import { repeatLabel } from './TodoSheet'
 
@@ -291,6 +292,7 @@ export function TemplateView({ id, onClose, onChanged }: { id: string; onClose: 
         )}
       </div>
       {note && <p className="sheet-sub">{note}</p>}
+      {session && !mine && <ReportLink type="template" id={t.id} />}
     </Sheet>
   )
 }

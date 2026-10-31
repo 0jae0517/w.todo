@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { STATUS_LABEL } from './components/Account'
+import { NoticeBanner } from './components/Admin'
 import Calendar, { type DayStat } from './components/Calendar'
 import CategorySheet from './components/CategorySheet'
 import DayList from './components/DayList'
@@ -16,6 +17,7 @@ import TodoSheet from './components/TodoSheet'
 import { dayLabel, todayKey } from './date'
 import { holidayName } from './holidays'
 import { startNative } from './native'
+import { useAnnouncement } from './admin'
 import { useOfficePresence } from './office'
 import { useMyReactions, type Profile } from './social'
 import { useStore } from './store'
@@ -47,6 +49,7 @@ export default function App() {
   })
   useEffect(() => startNative(setTemplateId), [])
   useOfficePresence()
+  const { notice, close: closeNotice } = useAnnouncement()
 
   const stats = useMemo(() => {
     const m = new Map<string, DayStat>()
@@ -86,6 +89,7 @@ export default function App() {
         </div>
       </header>
 
+      {tab === 'todos' && notice && <NoticeBanner notice={notice} onClose={closeNotice} />}
       {tab === 'todos' && <FriendStrip selected={friend} onSelect={setFriend} onFind={() => setFriends({})} />}
       {tab === 'todos' && friend && (
         <main>
