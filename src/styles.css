@@ -148,7 +148,7 @@ input, select {
 .cal-day.selected .num { background: var(--text); color: var(--bg); font-weight: 700; }
 
 /* day */
-.day-title { font-size: 15px; line-height: 1.2; margin: 14px 0; color: var(--muted); font-weight: 600; }
+.day-title { font-size: 15px; line-height: 1.2; margin: 14px 0; color: var(--muted); font-weight: 600; text-align: right; }
 .empty { color: var(--muted); font-size: 14px; }
 
 .group { margin-bottom: 14px; }
@@ -960,3 +960,10 @@ button.p-status:disabled { cursor: default; }
 .cat-list li.focused { background: color-mix(in srgb, var(--accent) 8%, transparent); border-radius: 14px; margin: 0 -8px; padding-left: 8px; padding-right: 8px; }
 .p-empty svg { flex: none; display: block; }
 .p-empty-label { line-height: 1; }
+.p-label-add { display: block; width: 100%; min-height: 38px; text-align: left; }
+@media (hover: hover) { .p-label-add:hover { background: color-mix(in srgb, var(--text) 4%, transparent); } }
+.p-cat-input {
+  width: 100%; min-height: 30px; padding: 4px 5px; border: 1px dashed var(--sheet-line); border-radius: 3px;
+  background: transparent; outline: none; font-size: 13px; text-align: center; color: var(--text);
+}
+.p-cat-input::placeholder { color: var(--muted); opacity: 0.75; }

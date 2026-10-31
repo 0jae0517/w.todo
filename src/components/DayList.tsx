@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { timeLabel } from '../date'
 import { formatDuration } from '../pomodoro'
 import type { Reaction } from '../social'
-import { addTodo, inkFor, reorderCategories, reorderTodos, updateTodo, useStore } from '../store'
+import { addCategory, addTodo, inkFor, reorderCategories, reorderTodos, updateTodo, useStore } from '../store'
 import type { Category, Todo } from '../types'
 import { HandCircleIcon, LockIcon, PersonIcon, PlusIcon, RepeatIcon, TomatoIcon } from './Icons'
 import ReactionBar from './ReactionBar'
@@ -40,6 +40,8 @@ const MIN_ROWS = 10
 
 export default function DayList({ date, categories, todos, reactions, myId, onOpenTodo, onReact, onEditCategory }: Props) {
   const [adding, setAdding] = useState<string | null>(null)
+  // a new category being named in the first blank line of the left column
+  const [newCat, setNewCat] = useState(false)
   const editable = !!onOpenTodo
   const known = new Set(categories.map((c) => c.id))
   const orphans = todos.filter((t) => !known.has(t.category_id))
@@ -108,9 +110,17 @@ export default function DayList({ date, categories, todos, reactions, myId, onOp
             </section>
           )
         })}
-        {Array.from({ length: Math.max(0, MIN_ROWS - used) }, (_, i) => (
-          <div key={i} className="p-group p-filler" aria-hidden="true">
-            <div className="p-label" />
+        {Array.from({ length: Math.max(editable ? 1 : 0, MIN_ROWS - used) }, (_, i) => (
+          <div key={i} className="p-group p-filler">
+            {editable && i === 0 && newCat ? (
+              <div className="p-label">
+                <NewCategoryInput onDone={() => setNewCat(false)} />
+              </div>
+            ) : editable ? (
+              <button className="p-label p-label-add" onClick={() => setNewCat(true)} aria-label="카테고리 추가" />
+            ) : (
+              <div className="p-label" />
+            )}
             <div className="p-row">
               <div className="p-task" />
               <div className="p-status" />
@@ -212,6 +222,31 @@ function TodoItems({ items, color: c, editable, reactions, myId, onOpenTodo, onR
         </li>
       )}
     </ul>
+  )
+}
+
+function NewCategoryInput({ onDone }: { onDone: () => void }) {
+  const [value, setValue] = useState('')
+  const submit = () => {
+    const name = value.trim()
+    if (name) addCategory(name)
+    onDone()
+  }
+  return (
+    <input
+      className="p-cat-input"
+      autoFocus
+      enterKeyHint="done"
+      placeholder="카테고리"
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.nativeEvent.isComposing) return
+        if (e.key === 'Enter') submit()
+        if (e.key === 'Escape') onDone()
+      }}
+      onBlur={submit}
+    />
   )
 }
 
