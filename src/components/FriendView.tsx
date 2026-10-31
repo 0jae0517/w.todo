@@ -9,6 +9,7 @@ import DayList from './DayList'
 import Heatmap from './Heatmap'
 import { ReportLink } from './Admin'
 import { ChevronLeftIcon } from './Icons'
+import { UnfollowConfirm } from './ConfirmDialog'
 
 export const FOLLOW_LABEL = { following: '팔로잉', requested: '요청됨', none: '팔로우' }
 
@@ -84,16 +85,28 @@ export default function FriendView({ friend, onBack }: { friend: Profile; onBack
     }
   }
 
+  const [askUnfollow, setAskUnfollow] = useState(false)
+
   const toggleFollow = async () => {
+    if (state) setAskUnfollow(true)
+    else await doFollow()
+  }
+
+  const doUnfollow = async () => {
+    setAskUnfollow(false)
     try {
-      if (state) {
-        await unfollow(friend.id)
-        setState(null)
-        setData({ categories: [], todos: [] })
-      } else {
-        await follow(friend.id)
-        setState('requested')
-      }
+      await unfollow(friend.id)
+      setState(null)
+      setData({ categories: [], todos: [] })
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e))
+    }
+  }
+
+  const doFollow = async () => {
+    try {
+      await follow(friend.id)
+      setState('requested')
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e))
     }
@@ -116,6 +129,14 @@ export default function FriendView({ friend, onBack }: { friend: Profile; onBack
         )}
       </div>
       {err && <p className="error">{err}</p>}
+      {askUnfollow && state && (
+        <UnfollowConfirm
+          name={friend.name || friend.username}
+          state={state}
+          onCancel={() => setAskUnfollow(false)}
+          onConfirm={doUnfollow}
+        />
+      )}
       {state === 'requested' ? (
         <p className="empty">팔로우를 요청했어요. 상대가 수락하면 할 일을 볼 수 있어요.</p>
       ) : state === null ? (
