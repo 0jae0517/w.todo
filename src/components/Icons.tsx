@@ -86,8 +86,8 @@ export const TemplateIcon = () => (
   <svg {...base}><rect x="7" y="3.5" width="13" height="13" rx="3" /><path d="M17 20.5H7a3 3 0 01-3-3v-10" /></svg>
 )
 /** Planner status marks, drawn like a quick pen stroke. */
-export const HandCheckIcon = () => (
-  <svg {...base} strokeWidth={2.8}><path d="M3.5 12.8c1.6 1.1 3.4 3.3 5 6.2.4.7.9.7 1.3 0C12.6 13.2 16.3 8 20.8 3.8" /></svg>
+export const HandCircleIcon = () => (
+  <svg {...base} strokeWidth={2.6}><path d="M14.5 4.3C9.4 3 4.2 6 3.8 11.3c-.4 5 3.6 8.6 8.6 8.4 4.6-.2 8-3.6 7.8-8.1-.2-4-3.3-7-7.6-7.4-1.3-.1-2.6.1-3.6.5" /></svg>
 )
 export const HandTriangleIcon = () => (
   <svg {...base} strokeWidth={2.6}><path d="M12.3 4.2c-.4-.6-.8-.6-1.1 0L4 18.6c-.3.7 0 1 .7 1 4.8-.2 9.7-.3 14.6-.1.7 0 1-.4.6-1z" /></svg>

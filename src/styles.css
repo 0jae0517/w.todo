@@ -869,7 +869,7 @@ input, select {
 button.p-status:disabled { cursor: default; }
 .p-hl {
   display: block; padding: 5px 7px; border-radius: 3px; line-height: 1.35; font-size: 15px; text-box: none;
-  background: color-mix(in srgb, var(--c) 14%, transparent);
+  background: transparent;
 }
 .todo.done .p-hl { background: color-mix(in srgb, var(--c) 40%, transparent); color: var(--text); }
 .todo.done .p-hl .todo-text { text-decoration: none; }
@@ -879,7 +879,7 @@ button.p-status:disabled { cursor: default; }
 .p-row .reactions { padding: 4px 0 2px; }
 .p-empty { align-items: center; flex-direction: row; justify-content: flex-start; gap: 4px; color: var(--muted); font-size: 13px; }
 .p-empty svg { width: 14px; height: 14px; }
-.p-row .todo-input { border-bottom-width: 0; background: color-mix(in srgb, var(--c) 14%, transparent); border-radius: 3px; padding: 5px 7px; }
+.p-row .todo-input { border-bottom-width: 0; border-radius: 3px; padding: 5px 7px; }
 .todo.dragging.p-row { background: var(--bg); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18); position: relative; z-index: 2; }
 .p-filler .p-row { min-height: 38px; }
 :root[data-theme='chalk'] .planner-head { font-weight: 400; font-size: 15px; }
