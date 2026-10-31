@@ -136,7 +136,7 @@ input, select {
   color: var(--muted);
 }
 .mark.has-left { color: var(--text); }
-.mark.all-done { background: var(--accent); color: var(--on-accent); }
+.mark.all-done { color: var(--text); }
 .num {
   font-size: 12px;
   min-width: 22px;

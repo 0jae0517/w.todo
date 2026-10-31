@@ -61,8 +61,8 @@ export default function Calendar({ selected, onSelect, mode, onModeChange, stats
             .join(' ')
           return (
             <button key={key} className={cls} onClick={() => onSelect(key)} aria-label={holiday ? `${key} ${holiday}` : key} title={holiday}>
-              <span className={`mark ${s?.total ? (s.left ? 'has-left' : 'all-done') : ''}`}>
-                {s?.total ? s.left || <CheckMarkIcon /> : ''}
+              <span className={`mark ${s?.total ? (!s.left ? 'all-done' : s.left < s.total ? 'has-left' : '') : ''}`}>
+                {s?.total ? (s.left ? s.total - s.left : <CheckMarkIcon />) : ''}
               </span>
               <span className="num">{d.getDate()}</span>
             </button>
