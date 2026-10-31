@@ -889,7 +889,8 @@ button.p-status:disabled { cursor: default; }
 .p-row .reactions { padding: 4px 0 2px; }
 .p-empty { align-items: center; flex-direction: row; justify-content: flex-start; gap: 4px; color: var(--muted); font-size: 13px; }
 .p-empty svg { width: 14px; height: 14px; }
-.p-row .todo-input { border-bottom-width: 0; border-radius: 3px; padding: 5px 7px; }
+.p-row .todo-input { border-bottom-width: 0; border-radius: 0; padding: 5px 0; font-size: 13px; }
+.p-row .todo-input::placeholder { color: var(--muted); opacity: 0.75; }
 .todo.dragging.p-row { background: var(--bg); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18); position: relative; z-index: 2; }
 .p-filler .p-row { min-height: 38px; }
 :root[data-theme='chalk'] .planner-head { font-weight: 400; font-size: 15px; }
@@ -957,3 +958,5 @@ button.p-status:disabled { cursor: default; }
 .admin .tile { background: var(--surface); }
 .p-empty { opacity: 0.75; }
 .cat-list li.focused { background: color-mix(in srgb, var(--accent) 8%, transparent); border-radius: 14px; margin: 0 -8px; padding-left: 8px; padding-right: 8px; }
+.p-empty svg { flex: none; display: block; }
+.p-empty-label { line-height: 1; }
