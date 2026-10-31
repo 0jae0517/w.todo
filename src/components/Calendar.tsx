@@ -19,7 +19,7 @@ export default function Calendar({ selected, onSelect, mode, onModeChange, stats
   const today = todayKey()
   const days = mode === 'week' ? weekOf(selected) : monthGrid(selected)
   const month = fromKey(selected).getMonth()
-  const step = (dir: -1 | 1) => onSelect(mode === 'week' ? addDays(selected, dir * 7) : addMonths(selected, dir))
+  const step = (dir: -1 | 1) => onSelect(mode === 'week' ? addDays(selected, dir * 7) : addMonths(selected.slice(0, 8) + '01', dir))
 
   return (
     <section className="calendar">
