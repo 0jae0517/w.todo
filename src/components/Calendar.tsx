@@ -1,10 +1,39 @@
 import { holidayName } from '../holidays'
 import { WEEKDAYS, addDays, addMonths, fromKey, monthGrid, monthLabel, todayKey, weekOf } from '../date'
+import { inkFor, shownColor } from '../store'
+import type { Category, Todo } from '../types'
 import { CheckMarkIcon, ChevronLeftIcon, ChevronRightIcon } from './Icons'
 
 export interface DayStat {
   total: number
   left: number
+  /** category colours of the day's completed todos, in list order (one entry per todo) */
+  done: string[]
+}
+
+/** Per-day counts plus the colours the calendar cell is filled with. */
+export function dayStats(todos: Todo[], categories: Category[]) {
+  const cats = new Map(categories.map((c) => [c.id, c]))
+  const sorted = [...todos].sort(
+    (a, b) => (cats.get(a.category_id)?.position ?? 1e9) - (cats.get(b.category_id)?.position ?? 1e9) || a.position - b.position,
+  )
+  const m = new Map<string, DayStat>()
+  for (const t of sorted) {
+    const s = m.get(t.date) ?? { total: 0, left: 0, done: [] }
+    s.total++
+    if (t.done) s.done.push(shownColor(cats.get(t.category_id)?.color ?? '#dddddd'))
+    else s.left++
+    m.set(t.date, s)
+  }
+  return m
+}
+
+/** Equal horizontal bands, one per completed todo, so a single one fills the whole cell. */
+function fill(colors: string[]) {
+  if (!colors.length) return undefined
+  const n = colors.length
+  const stops = colors.map((c, i) => `${c} ${(i / n) * 100}% ${((i + 1) / n) * 100}%`)
+  return { background: n === 1 ? colors[0] : `linear-gradient(to bottom, ${stops.join(', ')})`, color: inkFor(colors[Math.floor(n / 2)]) }
 }
 
 interface Props {
@@ -61,7 +90,7 @@ export default function Calendar({ selected, onSelect, mode, onModeChange, stats
             .join(' ')
           return (
             <button key={key} className={cls} onClick={() => onSelect(key)} aria-label={holiday ? `${key} ${holiday}` : key} title={holiday}>
-              <span className={`mark ${s?.total ? (s.left ? 'has-left' : 'all-done') : ''}`}>
+              <span className={`mark ${s?.total ? (s.left ? 'has-left' : 'all-done') : ''}`} style={fill(s?.done ?? [])}>
                 {s?.total ? s.left || <CheckMarkIcon /> : ''}
               </span>
               <span className="num">{d.getDate()}</span>
