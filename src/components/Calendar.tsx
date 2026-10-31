@@ -19,7 +19,12 @@ export default function Calendar({ selected, onSelect, mode, onModeChange, stats
   const today = todayKey()
   const days = mode === 'week' ? weekOf(selected) : monthGrid(selected)
   const month = fromKey(selected).getMonth()
-  const step = (dir: -1 | 1) => onSelect(mode === 'week' ? addDays(selected, dir * 7) : addMonths(selected.slice(0, 8) + '01', dir))
+  // Month view: next → 1st of next month, prev → last day of previous month.
+  const step = (dir: -1 | 1) => {
+    if (mode === 'week') return onSelect(addDays(selected, dir * 7))
+    const first = selected.slice(0, 8) + '01'
+    onSelect(dir === 1 ? addMonths(first, 1) : addDays(first, -1))
+  }
 
   return (
     <section className="calendar">
