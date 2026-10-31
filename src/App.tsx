@@ -25,7 +25,7 @@ import { currentUserId, useSync } from './sync'
 import { useTimetableOn } from './timetable'
 
 type Tab = 'todos' | 'timetable' | 'timer' | 'office' | 'templates' | 'me'
-type Panel = { kind: 'todo'; id: string } | { kind: 'course'; id: string } | { kind: 'categories' } | null
+type Panel = { kind: 'todo'; id: string } | { kind: 'course'; id: string } | { kind: 'categories'; focus?: string } | null
 
 const TITLES: Record<Tab, string> = { todos: 'w.todo', timetable: '시간표', timer: '뽀모도로', office: '오피스', templates: '템플릿', me: '내 정보' }
 
@@ -118,6 +118,7 @@ export default function App() {
               reactions={reactions}
               myId={currentUserId()}
               onOpenTodo={(id) => setPanel({ kind: 'todo', id })}
+              onEditCategory={(id) => setPanel({ kind: 'categories', focus: id })}
             />
             <DayMascot todos={dayTodos} isToday={selected === todayKey()} />
           </main>
@@ -170,7 +171,7 @@ export default function App() {
       {panel?.kind === 'course' && courses.some((c) => c.id === panel.id) && (
         <CourseSheet course={courses.find((c) => c.id === panel.id)} onClose={() => setPanel(null)} />
       )}
-      {panel?.kind === 'categories' && <CategorySheet categories={categories} onClose={() => setPanel(null)} />}
+      {panel?.kind === 'categories' && <CategorySheet categories={categories} focus={panel.focus} onClose={() => setPanel(null)} />}
     </div>
   )
 }
