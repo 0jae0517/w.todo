@@ -958,3 +958,5 @@ button.p-status:disabled { cursor: default; }
 .admin .tile { background: var(--surface); }
 .p-empty { opacity: 0.75; }
 .cat-list li.focused { background: color-mix(in srgb, var(--accent) 8%, transparent); border-radius: 14px; margin: 0 -8px; padding-left: 8px; padding-right: 8px; }
+.p-empty svg { flex: none; display: block; }
+.p-empty-label { line-height: 1; }

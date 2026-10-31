@@ -206,7 +206,7 @@ function TodoItems({ items, color: c, editable, reactions, myId, onOpenTodo, onR
         <li className="p-row">
           <button className="p-task p-empty" onClick={onAddClick} aria-label="할 일 추가">
             <PlusIcon />
-            {!items.length && ' 할 일 추가'}
+            {!items.length && <span className="p-empty-label">할 일 추가</span>}
           </button>
           <span className="p-status" />
         </li>
