@@ -16,6 +16,7 @@ import {
   type Profile,
 } from '../social'
 import { useSync } from '../sync'
+import { UnfollowConfirm } from './ConfirmDialog'
 import FriendView, { FOLLOW_LABEL } from './FriendView'
 import Office from './Office'
 import Sheet from './Sheet'
@@ -126,6 +127,7 @@ function FriendHome({ me, initialTab = 'following', onOpen, onEditProfile }: { m
   const [results, setResults] = useState<Profile[] | null>(null)
   const [editing, setEditing] = useState(false)
   const [err, setErr] = useState<string | null>(null)
+  const [unfollowing, setUnfollowing] = useState<Profile | null>(null)
 
   const refresh = () =>
     Promise.all([listFollowing(), listFollowers(), followingIds(), listRequests()])
@@ -215,7 +217,7 @@ function FriendHome({ me, initialTab = 'following', onOpen, onEditProfile }: { m
                 삭제
               </button>
             )}
-            <button className={ids.has(p.id) ? 'follow on' : 'follow'} onClick={() => run(ids.has(p.id) ? unfollow(p.id) : follow(p.id))}>
+            <button className={ids.has(p.id) ? 'follow on' : 'follow'} onClick={() => (ids.has(p.id) ? setUnfollowing(p) : run(follow(p.id)))}>
               {ids.has(p.id) ? FOLLOW_LABEL[ids.get(p.id)!] : tab === 'followers' && !results ? '맞팔로우' : '팔로우'}
             </button>
           </li>
@@ -226,6 +228,18 @@ function FriendHome({ me, initialTab = 'following', onOpen, onEditProfile }: { m
           </li>
         )}
       </ul>
+      {unfollowing && ids.has(unfollowing.id) && (
+        <UnfollowConfirm
+          name={unfollowing.name || unfollowing.username}
+          state={ids.get(unfollowing.id)!}
+          onCancel={() => setUnfollowing(null)}
+          onConfirm={() => {
+            const id = unfollowing.id
+            setUnfollowing(null)
+            run(unfollow(id))
+          }}
+        />
+      )}
     </div>
   )
 }

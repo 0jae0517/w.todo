@@ -967,3 +967,29 @@ button.p-status:disabled { cursor: default; }
   background: transparent; outline: none; font-size: 13px; text-align: center; color: var(--text);
 }
 .p-cat-input::placeholder { color: var(--muted); opacity: 0.75; }
+
+/* ---- 확인 창 (팔로우 취소 등) ---- */
+.confirm-backdrop {
+  position: fixed; left: 0; right: 0;
+  top: var(--vv-top, 0px); height: var(--vv-height, 100dvh);
+  background: rgba(0, 0, 0, 0.45);
+  display: grid; place-items: center; padding: 24px;
+  z-index: 30; animation: fade 0.15s ease-out;
+}
+.confirm {
+  width: 100%; max-width: 300px;
+  background: var(--bg); border-radius: 16px;
+  padding: 22px 18px 16px; text-align: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  animation: pop 0.16s ease-out;
+}
+@keyframes pop { from { transform: scale(0.94); opacity: 0; } }
+.confirm-title { font-size: 16px; margin: 0; line-height: 1.4; word-break: keep-all; }
+.confirm-msg { color: var(--muted); font-size: 13px; line-height: 1.5; margin: 8px 0 0; word-break: keep-all; }
+.confirm-actions { display: flex; gap: 8px; margin-top: 18px; }
+.confirm-actions button { flex: 1; padding: 11px 0; border-radius: 10px; font-size: 14px; font-weight: 600; background: var(--surface); color: var(--text); }
+.confirm-actions .is-danger { color: var(--danger); }
+.confirm-actions .is-primary { background: var(--accent); color: var(--on-accent); }
+:root[data-theme='chalk'] .confirm { border: 1.5px dashed var(--line); background: var(--bg); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35); }
+:root[data-theme='chalk'] .confirm-title { font-weight: 400; font-size: 18px; }
+:root[data-theme='chalk'] .confirm-actions button { background: transparent; border: 1.5px dashed var(--line); font-weight: 400; }
