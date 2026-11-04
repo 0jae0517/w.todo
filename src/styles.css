@@ -264,7 +264,7 @@ input, select {
 .pomo-start svg { width: 1.05em; height: 1.05em; vertical-align: -0.17em; margin-right: 2px; }
 
 .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
-.actions > button, .action-date {
+.actions > button {
   flex: 1;
   min-width: 100px;
   padding: 12px;
@@ -275,12 +275,10 @@ input, select {
   position: relative;
   cursor: pointer;
 }
-.action-date input {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  cursor: pointer;
-}
+.actions > button.on { outline: 1.5px solid var(--text); outline-offset: -1.5px; }
+.date-pick .cal-head { justify-content: space-between; margin-bottom: 2px; }
+.date-pick .cal-day { padding: 2px 0; }
+.date-pick .num { font-size: 14px; min-width: 32px; padding: 6px 0; }
 
 .field { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; font-size: 14px; }
 .field select, .login input, .cat-row input, .cat-add input {
