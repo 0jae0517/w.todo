@@ -1,12 +1,13 @@
 import { useState } from 'react'
-import { WEEKDAYS, addDays, dayLabel, fromKey, timeLabel, todayKey } from '../date'
+import { WEEKDAYS, addDays, addMonths, dayLabel, fromKey, monthGrid, monthLabel, timeLabel, todayKey } from '../date'
+import { holidayName } from '../holidays'
 import { deleteTodo, repeatStreak, setRepeat, stopRepeat, updateTodo, useStore } from '../store'
 import { focusOn, formatDuration } from '../pomodoro'
 import type { Reaction } from '../social'
 import type { Category, Todo } from '../types'
 import Sheet from './Sheet'
 import TimeWheel from './TimeWheel'
-import { TomatoIcon } from './Icons'
+import { ChevronLeftIcon, ChevronRightIcon, TomatoIcon } from './Icons'
 
 interface Props {
   todo: Todo
@@ -18,7 +19,7 @@ interface Props {
 
 export default function TodoSheet({ todo, categories, reactions, onClose, onFocus }: Props) {
   const [title, setTitle] = useState(todo.title)
-  const [picking, setPicking] = useState<'time' | 'repeat' | null>(null)
+  const [picking, setPicking] = useState<'date' | 'time' | 'repeat' | null>(null)
   const routine = useStore().routines.find((r) => r.id === todo.routine_id)
   const saveTitle = () => {
     const t = title.trim()
@@ -78,11 +79,11 @@ export default function TodoSheet({ todo, categories, reactions, onClose, onFocu
       <div className="actions">
         {todo.date !== today && <button onClick={() => moveTo(today)}>오늘 하기</button>}
         <button onClick={() => moveTo(addDays(todo.date, 1))}>내일 하기</button>
-        <label className="action-date">
+        <button className={picking === 'date' ? 'on' : ''} onClick={() => setPicking(picking === 'date' ? null : 'date')}>
           날짜 바꾸기
-          <input type="date" value={todo.date} onChange={(e) => e.target.value && moveTo(e.target.value)} />
-        </label>
+        </button>
       </div>
+      {picking === 'date' && <DatePicker value={todo.date} onPick={(date) => (date === todo.date ? setPicking(null) : moveTo(date))} />}
       <div className="field">
         <span>시간</span>
         <button className="time-btn" onClick={() => setPicking(picking === 'time' ? null : 'time')}>
@@ -141,6 +142,53 @@ export default function TodoSheet({ todo, categories, reactions, onClose, onFocu
         삭제
       </button>
     </Sheet>
+  )
+}
+
+/**
+ * In-sheet month picker. The old hidden <input type="date"> overlay didn't open
+ * on desktop browsers (only its tiny calendar icon does) and fired onChange on
+ * every wheel scroll on iOS, so we draw our own.
+ */
+function DatePicker({ value, onPick }: { value: string; onPick: (date: string) => void }) {
+  const [view, setView] = useState(value.slice(0, 8) + '01')
+  const today = todayKey()
+  const month = fromKey(view).getMonth()
+  return (
+    <div className="repeat-box date-pick">
+      <div className="cal-head">
+        <button className="icon-btn" onClick={() => setView(addMonths(view, -1))} aria-label="이전 달">
+          <ChevronLeftIcon />
+        </button>
+        <span className="cal-title">{monthLabel(view)}</span>
+        <button className="icon-btn" onClick={() => setView(addMonths(view, 1))} aria-label="다음 달">
+          <ChevronRightIcon />
+        </button>
+      </div>
+      <div className="cal-grid">
+        {WEEKDAYS.map((w, i) => (
+          <div key={w} className={`cal-wd ${i === 0 ? 'sun' : i === 6 ? 'sat' : ''}`}>{w}</div>
+        ))}
+        {monthGrid(view).map((key) => {
+          const d = fromKey(key)
+          const holiday = holidayName(key)
+          const cls = [
+            'cal-day',
+            d.getMonth() !== month && 'outside',
+            key === value && 'selected',
+            key === today && 'today',
+            holiday || d.getDay() === 0 ? 'red' : d.getDay() === 6 ? 'blue' : '',
+          ]
+            .filter(Boolean)
+            .join(' ')
+          return (
+            <button key={key} className={cls} onClick={() => onPick(key)} aria-label={dayLabel(key)} title={holiday}>
+              <span className="num">{d.getDate()}</span>
+            </button>
+          )
+        })}
+      </div>
+    </div>
   )
 }
 
