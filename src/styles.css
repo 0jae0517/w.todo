@@ -951,6 +951,7 @@ button.p-status:disabled { cursor: default; }
 .notice-text strong { font-size: 14px; }
 .notice-body { font-size: 13px; color: var(--muted); white-space: pre-wrap; word-break: break-word; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
 .notice-body.open { display: block; }
+.save-warning { border-left-color: var(--danger); }
 .notice-banner .icon-btn { width: 32px; height: 32px; flex: none; }
 .notice-banner .icon-btn svg { width: 18px; height: 18px; }
 .admin .tile { background: var(--surface); }

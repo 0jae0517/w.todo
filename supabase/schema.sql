@@ -275,9 +275,11 @@ create index if not exists templates_listed_idx on public.templates (listed, use
 
 alter table public.templates enable row level security;
 
--- 링크를 아는 사람은 로그인하지 않아도 볼 수 있음 (id 는 추측할 수 없는 uuid)
+-- 목록에 공개한 것과 내 것만 표로 읽을 수 있음. "링크로만" 템플릿은 아래 get_template(id) 로만 열림
+-- (예전처럼 using (true) 면 앱에 든 공개 키로 표 전체를 조회해 링크 전용 템플릿까지 다 보였음)
 drop policy if exists "templates readable" on public.templates;
-create policy "templates readable" on public.templates for select to anon, authenticated using (true);
+create policy "templates readable" on public.templates for select to anon, authenticated
+  using (listed or owner_id = auth.uid());
 drop policy if exists "own templates insert" on public.templates;
 create policy "own templates insert" on public.templates for insert to authenticated
   with check (owner_id = auth.uid() and uses = 0);
@@ -298,6 +300,38 @@ language sql security definer set search_path = public as $$
 $$;
 revoke execute on function public.use_template(uuid) from public, anon;
 grant execute on function public.use_template(uuid) to authenticated;
+
+-- 링크(?t=<id>)로 템플릿 하나 열기: 로그인하지 않아도 되고, id 를 아는 것만 돌려줌
+create or replace function public.get_template(tid uuid) returns setof public.templates
+language sql stable security definer set search_path = public as $$
+  select * from templates where id = tid
+$$;
+revoke execute on function public.get_template(uuid) from public;
+grant execute on function public.get_template(uuid) to anon, authenticated;
+
+-- 템플릿 항목 형식 검사: 형식이 틀린 템플릿을 가져가면 그 사람의 동기화가 계속 실패했음
+-- [{ "title": 1~100자, "time": "HH:MM" 또는 null, "days": 0~6 숫자 배열 }]
+create or replace function public.valid_template_items(items jsonb) returns boolean
+language plpgsql immutable as $$
+declare it jsonb; d jsonb;
+begin
+  if jsonb_typeof(items) <> 'array' or jsonb_array_length(items) not between 1 and 50 then return false; end if;
+  for it in select * from jsonb_array_elements(items) loop
+    if jsonb_typeof(it) <> 'object' then return false; end if;
+    if coalesce(jsonb_typeof(it->'title'), '') <> 'string' or char_length(btrim(it->>'title')) not between 1 and 100 then return false; end if;
+    if coalesce(jsonb_typeof(it->'time'), 'null') <> 'null'
+       and not (jsonb_typeof(it->'time') = 'string' and (it->>'time') ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$') then return false; end if;
+    if coalesce(jsonb_typeof(it->'days'), '') <> 'array' then return false; end if;
+    for d in select * from jsonb_array_elements(it->'days') loop
+      if jsonb_typeof(d) <> 'number' or d::text !~ '^[0-6]$' then return false; end if;
+    end loop;
+  end loop;
+  return true;
+end
+$$;
+alter table public.templates drop constraint if exists templates_items_valid;
+-- not valid: 이미 있는 템플릿은 건드리지 않고, 새로 만들거나 고칠 때만 검사
+alter table public.templates add constraint templates_items_valid check (public.valid_template_items(items)) not valid;
 
 -- ============================================================
 -- 시간표 (대학생용): 수업 하나가 한 줄, 학기 기간 동안 매주 반복
@@ -495,7 +529,9 @@ grant execute on function public.admin_users(text, int, int) to authenticated;
 grant execute on function public.admin_set_ban(uuid, int) to authenticated;
 grant execute on function public.admin_delete_user(uuid) to authenticated;
 
--- 관리자는 누구의 템플릿이든 목록에서 내리거나 지울 수 있음
+-- 관리자는 누구의 템플릿이든 보고, 목록에서 내리거나 지울 수 있음
+drop policy if exists "admin templates read" on public.templates;
+create policy "admin templates read" on public.templates for select to authenticated using (public.is_admin());
 drop policy if exists "admin templates update" on public.templates;
 create policy "admin templates update" on public.templates for update to authenticated
   using (public.is_admin()) with check (public.is_admin());
@@ -635,6 +671,27 @@ begin
   if not exists (select 1 from public.admins) then
     raise notice 'w.todo.official@gmail.com 으로 가입하고 인증한 계정이 아직 없어요. 앱에서 가입한 뒤 다시 실행하세요.';
   end if;
+end $$;
+
+-- ============================================================
+-- 동기화: 더 오래된 수정이 서버의 더 새로운 수정을 덮지 않게
+-- (오프라인이던 기기가 나중에 옛 내용을 올려도 무시됨. 이름이 *_keep_newer 라 *_touch 보다 먼저 실행됨)
+-- ============================================================
+create or replace function public.keep_newer() returns trigger language plpgsql as $$
+begin
+  if new.updated_at < old.updated_at then
+    return null;
+  end if;
+  return new;
+end $$;
+
+do $$
+declare t text;
+begin
+  foreach t in array array['todos', 'categories', 'routines', 'sessions', 'courses'] loop
+    execute format('drop trigger if exists %I on public.%I', t || '_keep_newer', t);
+    execute format('create trigger %I before update on public.%I for each row execute function public.keep_newer()', t || '_keep_newer', t);
+  end loop;
 end $$;
 
 notify pgrst, 'reload schema';

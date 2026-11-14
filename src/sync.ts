@@ -35,6 +35,8 @@ const KINDS: Kind[] = ['categories', 'routines', 'todos', 'sessions', 'courses']
 
 /** A table the server doesn't have yet (schema.sql not re-run): skip it instead of failing the whole sync. */
 const missingTable = (e: { code?: string }) => e.code === 'PGRST205' || e.code === '42P01'
+/** The server refused the data itself (a check, type or length rule), so sending it again won't help. */
+const badData = (e: { code?: string }) => /^(22|23)/.test(e.code ?? '')
 const PAGE = 1000
 
 let running = false
@@ -77,10 +79,21 @@ async function push(userId: string) {
     for (const fresh of [false, true]) {
       const batch = rows.filter((r) => (r.updated_at === UNTOUCHED) === fresh)
       if (!batch.length) continue
-      const { error } = await supabase!
-        .from(kind)
-        .upsert(batch.map((r) => ({ ...r, user_id: userId })), { onConflict: 'user_id,id', ignoreDuplicates: fresh })
+      const send = (rows: typeof batch) =>
+        supabase!.from(kind).upsert(rows.map((r) => ({ ...r, user_id: userId })), { onConflict: 'user_id,id', ignoreDuplicates: fresh })
+      const { error } = await send(batch)
       if (error && missingTable(error)) break
+      if (error && badData(error)) {
+        // one malformed row shouldn't hold back everything else: send them one by one
+        // and give up on the ones the server refuses (they'd fail on every sync)
+        for (const row of batch) {
+          const res = await send([row])
+          if (res.error && !badData(res.error)) throw new Error(res.error.message)
+          if (res.error) console.warn(`sync: server refused ${kind}/${row.id}:`, res.error.message)
+          markPushed(kind, [row])
+        }
+        continue
+      }
       if (error) throw new Error(error.message)
       markPushed(kind, batch)
     }
@@ -134,7 +147,8 @@ export function startSync() {
     const prev = state.session?.user.id
     set({ session, status: session ? state.status : 'signed-out' })
     if (session && session.user.id !== prev) {
-      bindUser(session.user.id)
+      // another account's leftovers were wiped: its timer goes too
+      if (bindUser(session.user.id)) clearTimer()
       unlisten()
       listen(session.user.id)
       syncNow()

@@ -20,7 +20,7 @@ import { startNative } from './native'
 import { useAnnouncement } from './admin'
 import { useOfficePresence } from './office'
 import { useMyReactions, type Profile } from './social'
-import { useStore } from './store'
+import { saveFailing, useStore } from './store'
 import { currentUserId, useSync } from './sync'
 import { useTimetableOn } from './timetable'
 
@@ -89,6 +89,16 @@ export default function App() {
         </div>
       </header>
 
+      {saveFailing() && (
+        <div className="notice-banner save-warning" role="alert">
+          <div className="notice-text">
+            <strong>이 기기에 저장하지 못했어요</strong>
+            <span className="notice-body open">
+              브라우저 저장 공간이 꽉 찼거나 막혀 있어요. 서버에 아직 안 올라간 변경은 새로고침하면 사라질 수 있어요.
+            </span>
+          </div>
+        </div>
+      )}
       {tab === 'todos' && notice && <NoticeBanner notice={notice} onClose={closeNotice} />}
       {tab === 'todos' && <FriendStrip selected={friend} onSelect={setFriend} onFind={() => setFriends({})} />}
       {tab === 'todos' && friend && (
