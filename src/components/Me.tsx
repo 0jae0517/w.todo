@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { WEEKDAYS, addDays, fromKey, todayKey, weekOf } from '../date'
 import { formatDuration } from '../pomodoro'
-import { listFollowers, listFollowing, useMyProfile } from '../social'
+import { listBlocked, listFollowers, listFollowing, unblock, useMyProfile, type Profile } from '../social'
+import { exportCsv, exportJson } from '../exportData'
 import { useStore } from '../store'
 import { supabase } from '../supabase'
 import { deleteAccount, signOut, syncNow, useSync } from '../sync'
-import { PRIVACY_URL } from '../native'
+import { PRIVACY_URL, isNative } from '../native'
+import { setRemindersOn, useRemindersOn } from '../reminders'
 import type { Category, Todo } from '../types'
 import { DeleteAccount, LoginPanel, PasswordForm, STATUS_LABEL } from './Account'
 import AdminSheet from './Admin'
@@ -63,6 +65,7 @@ export default function Me({ todos, categories, onOpenFollows }: { todos: Todo[]
       )}
       <ThemePicker />
       <TimetableToggle />
+      <RemindersToggle />
       <div className="seg" role="tablist">
         {VIEWS.map(([v, label]) => (
           <button key={v} role="tab" aria-selected={view === v} className={view === v ? 'on' : ''} onClick={() => pick(v)}>
@@ -85,6 +88,13 @@ export default function Me({ todos, categories, onOpenFollows }: { todos: Todo[]
           </>
         )}
         {view === 'recap' && <Recap todos={todos} categories={categories} />}
+      </section>
+      <section className="export-row">
+        <span>내 데이터 내보내기</span>
+        <div className="actions">
+          <button onClick={() => exportCsv()}>할 일 CSV</button>
+          <button onClick={() => exportJson()}>전체 JSON</button>
+        </div>
       </section>
     </div>
   )
@@ -170,11 +180,44 @@ function Settings({ onSaved }: { onSaved: () => void }) {
         <button onClick={() => signOut()}>로그아웃</button>
       </div>
       <PasswordForm />
+      <BlockedList />
       <DeleteAccount onDelete={deleteAccount} />
       <a className="link privacy-link" href={PRIVACY_URL} target="_blank" rel="noopener">
         개인정보처리방침
       </a>
     </div>
+  )
+}
+
+/** People I've blocked, with a way to unblock. */
+function BlockedList() {
+  const [list, setList] = useState<Profile[] | null>(null)
+  useEffect(() => {
+    listBlocked().then(setList).catch(() => setList([]))
+  }, [])
+  if (!list?.length) return null
+  return (
+    <>
+      <h3 className="sub-title">차단한 사용자</h3>
+      <ul className="blocked-list">
+        {list.map((p) => (
+          <li key={p.id}>
+            <span>
+              {p.name || p.username} <span className="muted">@{p.username}</span>
+            </span>
+            <button
+              className="link"
+              onClick={async () => {
+                await unblock(p.id)
+                setList(list.filter((x) => x.id !== p.id))
+              }}
+            >
+              차단 풀기
+            </button>
+          </li>
+        ))}
+      </ul>
+    </>
   )
 }
 
@@ -363,6 +406,26 @@ function TimetableToggle() {
         <small>수업을 넣으면 할 일 화면에 그날 수업이 보여요</small>
       </span>
       <button className={`switch ${on ? 'on' : ''}`} role="switch" aria-checked={on} aria-label="대학생 시간표" onClick={() => setTimetableOn(!on)} />
+    </div>
+  )
+}
+
+function RemindersToggle() {
+  const on = useRemindersOn()
+  const [note, setNote] = useState<string | null>(null)
+  return (
+    <div className="tt-toggle">
+      <span>
+        할 일 시간 알림
+        <small>{note ?? (isNative ? '시간을 정한 할 일을 그 시간에 알려줘요' : '시간을 정한 할 일을 알려줘요 (w.todo가 열려 있을 때)')}</small>
+      </span>
+      <button
+        className={`switch ${on ? 'on' : ''}`}
+        role="switch"
+        aria-checked={on}
+        aria-label="할 일 시간 알림"
+        onClick={async () => setNote((await setRemindersOn(!on)) ? null : '알림이 꺼져 있어요. 기기나 브라우저 설정에서 허용해 주세요.')}
+      />
     </div>
   )
 }

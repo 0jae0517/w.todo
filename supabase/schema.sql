@@ -740,6 +740,58 @@ revoke execute on function public.use_template(uuid) from public, anon;
 grant execute on function public.use_template(uuid) to authenticated;
 
 -- ============================================================
+-- 차단: 차단하면 서로의 팔로우가 끊기고, 상대는 나를 찾거나 다시 팔로우 요청할 수 없음
+-- ============================================================
+create table if not exists public.blocks (
+  blocker_id uuid not null default auth.uid() references public.profiles on delete cascade,
+  blocked_id uuid not null references public.profiles on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (blocker_id, blocked_id),
+  check (blocker_id <> blocked_id)
+);
+alter table public.blocks enable row level security;
+drop policy if exists "own blocks" on public.blocks;
+create policy "own blocks" on public.blocks for select to authenticated using (blocker_id = auth.uid());
+drop policy if exists "block" on public.blocks;
+create policy "block" on public.blocks for insert to authenticated with check (blocker_id = auth.uid());
+drop policy if exists "unblock" on public.blocks;
+create policy "unblock" on public.blocks for delete to authenticated using (blocker_id = auth.uid());
+revoke update on public.blocks from anon, authenticated;
+grant select, insert, delete on public.blocks to authenticated;
+
+-- 둘 중 한 사람이라도 상대를 차단했는지
+create or replace function public.blocked_between(a uuid, b uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from blocks where (blocker_id = a and blocked_id = b) or (blocker_id = b and blocked_id = a))
+$$;
+-- 이 사람이 나를 차단했는지 (차단한 사람의 프로필은 나에게 안 보임)
+create or replace function public.blocked_me(owner uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from blocks where blocker_id = owner and blocked_id = auth.uid())
+$$;
+
+-- 차단하면 양쪽 팔로우(요청 포함)를 지움
+create or replace function public.drop_follows_on_block() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  delete from follows
+  where (follower_id = new.blocker_id and followee_id = new.blocked_id)
+     or (follower_id = new.blocked_id and followee_id = new.blocker_id);
+  return null;
+end
+$$;
+drop trigger if exists blocks_drop_follows on public.blocks;
+create trigger blocks_drop_follows after insert on public.blocks
+  for each row execute function public.drop_follows_on_block();
+
+drop policy if exists "profiles readable" on public.profiles;
+create policy "profiles readable" on public.profiles for select to authenticated
+  using (not public.blocked_me(id));
+drop policy if exists "follow" on public.follows;
+create policy "follow" on public.follows for insert to authenticated
+  with check (follower_id = auth.uid() and not accepted and not public.blocked_between(follower_id, followee_id));
+
+-- ============================================================
 -- 동기화: 더 오래된 수정이 서버의 더 새로운 수정을 덮지 않게
 -- (오프라인이던 기기가 나중에 옛 내용을 올려도 무시됨. 이름이 *_keep_newer 라 *_touch 보다 먼저 실행됨)
 -- ============================================================

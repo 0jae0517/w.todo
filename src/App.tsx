@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { STATUS_LABEL } from './components/Account'
 import { NoticeBanner } from './components/Admin'
 import Calendar, { type DayStat } from './components/Calendar'
+import CarryOver from './components/CarryOver'
 import CategorySheet from './components/CategorySheet'
 import DayList from './components/DayList'
 import FriendStrip from './components/FriendStrip'
@@ -145,6 +146,7 @@ export default function App() {
             {holidayName(selected) && <span className="holiday"> · {holidayName(selected)}</span>}
           </h2>
             <DayClasses date={selected} onOpen={(c) => setPanel({ kind: 'course', id: c.id })} />
+            {selected === todayKey() && <CarryOver todos={todos} categories={categories} />}
             <DayList
               date={selected}
               categories={categories}

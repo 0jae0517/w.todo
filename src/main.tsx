@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import App from './App'
 import { isNative } from './native'
 import { startTimerLoop } from './pomodoro'
+import { startReminders } from './reminders'
 import { startSync } from './sync'
 import './styles.css'
 import { applyTheme } from './theme'
@@ -12,6 +13,7 @@ applyTheme()
 trackVisualViewport()
 startSync()
 startTimerLoop()
+startReminders()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

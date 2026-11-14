@@ -113,6 +113,25 @@ export async function removeFollower(id: string) {
   check(await db().from('follows').delete().eq('follower_id', id).eq('followee_id', me()))
 }
 
+// ---- blocking ----
+
+/** Blocks someone: follows both ways end, and they can't find or follow me any more. */
+export async function block(id: string) {
+  const res = await db().from('blocks').insert({ blocker_id: me(), blocked_id: id })
+  if (res.error?.code === '23505') return // already blocked
+  check(res)
+}
+
+export async function unblock(id: string) {
+  check(await db().from('blocks').delete().eq('blocker_id', me()).eq('blocked_id', id))
+}
+
+/** People I've blocked. */
+export async function listBlocked() {
+  const rows = check(await db().from('blocks').select('p:profiles!blocks_blocked_id_fkey(id, username, name)').eq('blocker_id', me()))
+  return (rows ?? []).map((r) => r.p as unknown as Profile).filter(Boolean)
+}
+
 // ---- a friend's todos ----
 
 export async function friendData(ownerId: string, from: string, to: string) {
