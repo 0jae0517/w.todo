@@ -15,7 +15,7 @@ import Heatmap from './Heatmap'
 import Recap, { lastMonthLabel, recapReady } from './Recap'
 import Sheet from './Sheet'
 import Mascot from './Mascot'
-import { setTheme, useTheme, type Theme } from '../theme'
+import { loadChalkFonts, setTheme, useTheme, type Theme } from '../theme'
 import { setTimetableOn, useTimetableOn } from '../timetable'
 import { useIsAdmin } from '../admin'
 import { ChevronRightIcon, PersonIcon, SparkleIcon, TomatoIcon } from './Icons'
@@ -336,6 +336,8 @@ const THEMES: [Theme, string][] = [
 
 function ThemePicker() {
   const theme = useTheme()
+  // the 칠판 button is drawn in its handwriting font
+  useEffect(loadChalkFonts, [])
   return (
     <div className="theme-picker">
       <span className="theme-label">테마</span>
