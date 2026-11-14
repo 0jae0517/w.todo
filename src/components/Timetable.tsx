@@ -6,6 +6,8 @@ import type { Course, Slot } from '../types'
 import { CloseIcon, PencilIcon } from './Icons'
 import Sheet from './Sheet'
 import TimeWheel from './TimeWheel'
+import { ask } from '../dialogs'
+import { DateField } from './DatePicker'
 
 const HOUR = 52
 /** Monday first, like most timetables. */
@@ -186,8 +188,8 @@ export function CourseSheet({ course, onClose }: { course?: Course; onClose: () 
       {course && (
         <button
           className="danger"
-          onClick={() => {
-            if (!confirm(`'${course.title}' 수업을 시간표에서 지울까요?`)) return
+          onClick={async () => {
+            if (!(await ask({ title: `'${course.title}' 수업을 시간표에서 지울까요?`, confirmLabel: '지우기', danger: true }))) return
             deleteCourse(course.id)
             onClose()
           }}
@@ -216,14 +218,8 @@ function TermSheet({ term, onClose }: { term: { term_start: string; term_end: st
   return (
     <Sheet onClose={onClose} title="학기 기간">
       <p className="sheet-sub">이 기간 동안 매주 수업이 할 일 화면에 보여요. 공휴일에는 보이지 않아요.</p>
-      <label className="field">
-        <span>개강</span>
-        <input type="date" value={start} onChange={(e) => setStart(e.target.value)} />
-      </label>
-      <label className="field">
-        <span>종강</span>
-        <input type="date" value={end} onChange={(e) => setEnd(e.target.value)} />
-      </label>
+      <DateField label="개강" value={start} onChange={setStart} />
+      <DateField label="종강" value={end} onChange={setEnd} />
       <button
         className="primary wide"
         disabled={!valid}

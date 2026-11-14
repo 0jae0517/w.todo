@@ -162,11 +162,20 @@ function finish() {
 
 function notify(body: string) {
   beep()
-  try {
-    if ('Notification' in window && Notification.permission === 'granted') new Notification('뽀모도로', { body, icon: '/icon-192.png' })
-  } catch {
-    // some mobile browsers only allow notifications from a service worker
-  }
+  if (!('Notification' in window) || Notification.permission !== 'granted') return
+  const options = { body, icon: '/icon-192.png', tag: 'pomodoro' }
+  // Android Chrome (and installed web apps) only show notifications through the service worker
+  const viaWorker = navigator.serviceWorker?.getRegistration().then((reg) => {
+    if (!reg) throw new Error('no service worker')
+    return reg.showNotification('뽀모도로', options)
+  })
+  ;(viaWorker ?? Promise.reject()).catch(() => {
+    try {
+      new Notification('뽀모도로', options)
+    } catch {
+      // notifications unavailable; the beep still plays
+    }
+  })
 }
 
 function beep() {

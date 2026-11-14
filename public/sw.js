@@ -1,6 +1,6 @@
 // App-shell cache: the page and its built assets load offline after the first visit.
 // Supabase API calls are never cached.
-const CACHE = 'todo-app-v2'
+const CACHE = 'todo-app-v3'
 
 self.addEventListener('install', () => self.skipWaiting())
 self.addEventListener('activate', (e) => {
@@ -41,5 +41,16 @@ self.addEventListener('fetch', (e) => {
           return res
         }),
     ),
+  )
+})
+
+// tapping a timer notification brings the app back (or opens it)
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close()
+  e.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+      const open = list.find((c) => new URL(c.url).origin === location.origin)
+      return open ? open.focus() : self.clients.openWindow('/')
+    }),
   )
 })

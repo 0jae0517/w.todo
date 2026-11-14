@@ -18,6 +18,8 @@ import { dayLabel, todayKey } from './date'
 import { holidayName } from './holidays'
 import { startNative } from './native'
 import { useAnnouncement } from './admin'
+import { useBack } from './back'
+import { DialogHost, ToastHost } from './dialogs'
 import { useOfficePresence } from './office'
 import { useMyReactions, type Profile } from './social'
 import { saveFailing, useStore } from './store'
@@ -26,6 +28,8 @@ import { useTimetableOn } from './timetable'
 
 type Tab = 'todos' | 'timetable' | 'timer' | 'office' | 'templates' | 'me'
 type Panel = { kind: 'todo'; id: string } | { kind: 'course'; id: string } | { kind: 'categories'; focus?: string } | null
+
+const MODE_KEY = 'todo-app:calendar-mode'
 
 const TITLES: Record<Tab, string> = { todos: 'w.todo', timetable: '시간표', timer: '뽀모도로', office: '오피스', templates: '템플릿', me: '내 정보' }
 
@@ -36,7 +40,24 @@ export default function App() {
   const { status } = useSync()
   const [tab, setTab] = useState<Tab>('todos')
   const [selected, setSelected] = useState(todayKey)
-  const [mode, setMode] = useState<'week' | 'month'>('month')
+  // the month grid leaves little room for the list on short phones, so they start on the week row
+  const [mode, setModeState] = useState<'week' | 'month'>(() => {
+    try {
+      const saved = localStorage.getItem(MODE_KEY)
+      if (saved === 'week' || saved === 'month') return saved
+    } catch {
+      // ignore
+    }
+    return window.innerHeight < 640 ? 'week' : 'month'
+  })
+  const setMode = (m: 'week' | 'month') => {
+    setModeState(m)
+    try {
+      localStorage.setItem(MODE_KEY, m)
+    } catch {
+      // ignore
+    }
+  }
   const [panel, setPanel] = useState<Panel>(null)
   const [friend, setFriend] = useState<Profile | null>(null)
   // the friends popup, opened from the todo screen, 내 정보 or the office
@@ -49,6 +70,9 @@ export default function App() {
   })
   useEffect(() => startNative(setTemplateId), [])
   useOfficePresence()
+  // back from another tab returns to 할 일, and from a friend's list to mine
+  useBack(() => setTab('todos'), tab !== 'todos')
+  useBack(() => setFriend(null), tab === 'todos' && !!friend)
   const { notice, close: closeNotice } = useAnnouncement()
 
   const stats = useMemo(() => {
@@ -182,6 +206,8 @@ export default function App() {
         <CourseSheet course={courses.find((c) => c.id === panel.id)} onClose={() => setPanel(null)} />
       )}
       {panel?.kind === 'categories' && <CategorySheet categories={categories} focus={panel.focus} onClose={() => setPanel(null)} />}
+      <ToastHost />
+      <DialogHost />
     </div>
   )
 }

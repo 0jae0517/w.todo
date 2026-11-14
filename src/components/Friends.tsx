@@ -21,6 +21,7 @@ import FriendView, { FOLLOW_LABEL } from './FriendView'
 import Office from './Office'
 import Sheet from './Sheet'
 import { TemplateGallery } from './Templates'
+import { ask } from '../dialogs'
 
 /** The 오피스 tab: needs a login and a profile, like everything with friends. */
 export function OfficeTab({ onLogin, onOpenFriend }: { onLogin: () => void; onOpenFriend: (p: Profile) => void }) {
@@ -213,7 +214,9 @@ function FriendHome({ me, initialTab = 'following', onOpen, onEditProfile }: { m
               </span>
             </button>
             {tab === 'followers' && !results && (
-              <button className="link danger" onClick={() => confirm(`${p.name || p.username}님을 팔로워에서 삭제할까요?`) && run(removeFollower(p.id))}>
+              <button className="link danger" onClick={async () => {
+                  if (await ask({ title: `${p.name || p.username}님을 팔로워에서 삭제할까요?`, confirmLabel: '삭제', danger: true })) run(removeFollower(p.id))
+                }}>
                 삭제
               </button>
             )}

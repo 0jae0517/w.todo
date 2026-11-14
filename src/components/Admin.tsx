@@ -25,6 +25,7 @@ import { deleteTemplate, setListed, type Template } from '../templates'
 import { CloseIcon } from './Icons'
 import Sheet from './Sheet'
 import { TemplateView } from './Templates'
+import { ask } from '../dialogs'
 
 type View = 'stats' | 'users' | 'templates' | 'reports' | 'notices'
 const VIEWS: [View, string][] = [
@@ -254,8 +255,8 @@ function UserDetail({ user: u, onChanged }: { user: AdminUser; onChanged: () => 
           <button
             className="danger"
             disabled={busy}
-            onClick={() => {
-              if (!confirm(`${who} 계정을 삭제할까요?\n할 일, 카테고리, 템플릿 등 모든 데이터가 지워지고 되돌릴 수 없어요.`)) return
+            onClick={async () => {
+              if (!(await ask({ title: `${who} 계정을 삭제할까요?`, message: '할 일, 카테고리, 템플릿 등 모든 데이터가 지워지고 되돌릴 수 없어요.', confirmLabel: '계정 삭제', danger: true }))) return
               run(() => deleteUser(u.id))
             }}
           >
@@ -269,9 +270,9 @@ function UserDetail({ user: u, onChanged }: { user: AdminUser; onChanged: () => 
 }
 
 function BanButtons({ who, busy, onBan }: { who: string; busy: boolean; onBan: (days: number) => void }) {
-  const ban = (days: number) => {
+  const ban = async (days: number) => {
     const label = days ? `${days}일 동안` : '영구히'
-    if (confirm(`${who} 계정을 ${label} 정지할까요?\n정지되면 로그인할 수 없고, 이미 로그인한 기기도 1시간 안에 로그아웃돼요.`)) onBan(days)
+    if (await ask({ title: `${who} 계정을 ${label} 정지할까요?`, message: '정지되면 로그인할 수 없고, 이미 로그인한 기기도 1시간 안에 로그아웃돼요.', confirmLabel: '정지', danger: true })) onBan(days)
   }
   return (
     <>
@@ -341,7 +342,9 @@ function Templates() {
                 <button onClick={() => act(() => setListed(t.id, !t.listed))}>{t.listed ? '목록에서 내리기' : '목록에 공개'}</button>
                 <button
                   className="danger"
-                  onClick={() => confirm(`'${t.title}' 템플릿을 삭제할까요? 되돌릴 수 없어요.`) && act(() => deleteTemplate(t.id))}
+                  onClick={async () => {
+                    if (await ask({ title: `'${t.title}' 템플릿을 삭제할까요?`, message: '되돌릴 수 없어요.', confirmLabel: '삭제', danger: true })) act(() => deleteTemplate(t.id))
+                  }}
                 >
                   삭제
                 </button>
@@ -435,8 +438,8 @@ function Reports() {
                 {r.target && r.target_type === 'template' && (
                   <button
                     className="danger"
-                    onClick={() =>
-                      confirm(`'${r.target!.title}' 템플릿을 삭제할까요?`) &&
+                    onClick={async () =>
+                      (await ask({ title: `'${r.target!.title}' 템플릿을 삭제할까요?`, confirmLabel: '삭제', danger: true })) &&
                       act(async () => {
                         await deleteTemplate(r.target_id)
                         await setReportStatus(r.id, 'resolved')
@@ -556,7 +559,9 @@ function Notices() {
               </div>
               <div className="actions admin-row-actions">
                 <button onClick={() => setEdit(a)}>고치기</button>
-                <button className="danger" onClick={() => confirm(`'${a.title}' 공지를 삭제할까요?`) && act(() => deleteAnnouncement(a.id))}>
+                <button className="danger" onClick={async () => {
+                    if (await ask({ title: `'${a.title}' 공지를 삭제할까요?`, confirmLabel: '삭제', danger: true })) act(() => deleteAnnouncement(a.id))
+                  }}>
                   삭제
                 </button>
               </div>

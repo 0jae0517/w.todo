@@ -20,6 +20,8 @@ import { CheckMarkIcon, GlobeIcon, LinkIcon, PlusIcon, RepeatIcon } from './Icon
 import { ReportLink } from './Admin'
 import Sheet from './Sheet'
 import { repeatLabel } from './TodoSheet'
+import { ask } from '../dialogs'
+import { DateField } from './DatePicker'
 
 const errText = (e: unknown) => (e instanceof Error ? e.message : String(e))
 const itemKey = (it: TemplateItem) => `${it.title}|${it.time}|${it.days.join()}`
@@ -257,10 +259,7 @@ export function TemplateView({ id, onClose, onChanged }: { id: string; onClose: 
               ))}
             </select>
           </label>
-          <label className="field">
-            <span>{repeating ? '시작 날짜' : '날짜'}</span>
-            <input type="date" value={date} onChange={(e) => e.target.value && setDate(e.target.value)} />
-          </label>
+          <DateField label={repeating ? '시작 날짜' : '날짜'} value={date} onChange={setDate} />
           <button className="primary wide" onClick={use}>내 할 일에 추가</button>
         </>
       )}
@@ -280,7 +279,7 @@ export function TemplateView({ id, onClose, onChanged }: { id: string; onClose: 
             </button>
             <button
               onClick={async () => {
-                if (!confirm(`'${t.title}' 템플릿을 삭제할까요? 이미 가져간 사람의 할 일은 그대로 남아요.`)) return
+                if (!(await ask({ title: `'${t.title}' 템플릿을 삭제할까요?`, message: '이미 가져간 사람의 할 일은 그대로 남아요.', confirmLabel: '삭제', danger: true }))) return
                 await deleteTemplate(t.id)
                 onChanged?.()
                 onClose()

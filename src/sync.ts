@@ -7,6 +7,7 @@ import { clearTimer } from './pomodoro'
 import { leaveOffice } from './office'
 import { UNTOUCHED, applyRemote, bindUser, generateRepeats, getCursor, hasPending, markPushed, onLocalChange, pendingChanges, resetLocal } from './store'
 import type { Kind } from './types'
+import { ask, tell } from './dialogs'
 
 export type SyncStatus = 'off' | 'signed-out' | 'syncing' | 'synced' | 'offline' | 'error'
 
@@ -161,7 +162,7 @@ export function startSync() {
   if (location.hash.includes('kakao_')) {
     const fragment = location.hash
     history.replaceState(null, '', location.pathname + location.search)
-    finishKakaoLogin(fragment).catch((e) => alert(e instanceof Error ? e.message : String(e)))
+    finishKakaoLogin(fragment).catch((e) => tell('로그인하지 못했어요', e instanceof Error ? e.message : String(e)))
   }
   onLocalChange(scheduleSync)
   window.addEventListener('online', () => syncNow())
@@ -190,7 +191,12 @@ export async function signOut() {
   await syncNow()
   if (
     hasPending() &&
-    !confirm('아직 서버에 올라가지 않은 변경이 있어요. 로그아웃하면 이 기기에서 사라져요. 그래도 로그아웃할까요?')
+    !(await ask({
+      title: '그래도 로그아웃할까요?',
+      message: '아직 서버에 올라가지 않은 변경이 있어요. 로그아웃하면 이 기기에서 사라져요.',
+      confirmLabel: '로그아웃',
+      danger: true,
+    }))
   )
     return
   // friends stop seeing me in the office right away
