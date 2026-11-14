@@ -151,7 +151,10 @@ export function useOffice(me: Profile | null | undefined) {
     load()
     const ch = supabase
       .channel(`office:${Math.random()}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'office_status' }, load)
+      // only my officemates' rows (realtime's in-filter takes up to 100 ids), not everyone's heartbeat
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'office_status', filter: `user_id=in.(${ids.split(',').slice(0, 100).join(',')})` }, load)
+      // realtime can't filter deletes (someone leaving or hiding); they're rare
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'office_status' }, load)
       .subscribe()
     // people drift to "away" without any row changing
     const id = setInterval(load, 60_000)

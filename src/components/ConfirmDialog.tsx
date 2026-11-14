@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { useBack } from '../back'
 
 /** A small centered yes/no dialog, drawn above any open sheet. */
 export default function ConfirmDialog({
@@ -13,11 +14,13 @@ export default function ConfirmDialog({
   title: string
   message?: string
   confirmLabel: string
-  cancelLabel?: string
+  /** null hides the cancel button (a plain notice) */
+  cancelLabel?: string | null
   danger?: boolean
   onConfirm: () => void
   onCancel: () => void
 }) {
+  useBack(onCancel)
   useEffect(() => {
     // capture + stop so Escape closes only this dialog, not the sheet underneath
     const onKey = (e: KeyboardEvent) => {
@@ -35,7 +38,7 @@ export default function ConfirmDialog({
         <h2 className="confirm-title">{title}</h2>
         {message && <p className="confirm-msg">{message}</p>}
         <div className="confirm-actions">
-          <button onClick={onCancel}>{cancelLabel}</button>
+          {cancelLabel !== null && <button onClick={onCancel}>{cancelLabel}</button>}
           <button className={danger ? 'is-danger' : 'is-primary'} onClick={onConfirm}>
             {confirmLabel}
           </button>
