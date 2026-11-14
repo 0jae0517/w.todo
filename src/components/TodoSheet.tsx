@@ -49,6 +49,7 @@ export default function TodoSheet({ todo, categories, reactions, onClose, onFocu
         {routine && repeatStreak(routine.id) > 0 && ` · ${repeatStreak(routine.id)}일 연속 달성`}
       </p>
       <input
+        maxLength={200}
         className="sheet-input todo-sheet-title"
         value={title}
         onChange={(e) => setTitle(e.target.value)}

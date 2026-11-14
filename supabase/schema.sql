@@ -674,6 +674,72 @@ begin
 end $$;
 
 -- ============================================================
+-- 악용 방지: 글자 수 제한, 운영자 사칭 막기, 템플릿 사용 횟수는 한 사람당 한 번
+-- ============================================================
+-- 글자 수 제한 (not valid: 이미 있는 줄은 그대로 두고, 새로 쓰거나 고칠 때만 검사)
+do $$
+declare c record;
+begin
+  for c in select * from (values
+    ('todos', 'todos_title_len', 'char_length(title) <= 200'),
+    ('routines', 'routines_title_len', 'char_length(title) <= 200'),
+    ('categories', 'categories_name_len', 'char_length(name) <= 30'),
+    ('courses', 'courses_title_len', 'char_length(title) <= 50 and char_length(room) <= 30'),
+    ('profiles', 'profiles_name_len', 'char_length(name) <= 20')
+  ) as v(tbl, con, expr) loop
+    execute format('alter table public.%I drop constraint if exists %I', c.tbl, c.con);
+    execute format('alter table public.%I add constraint %I check (%s) not valid', c.tbl, c.con, c.expr);
+  end loop;
+end $$;
+
+-- 아이디·이름에 운영자로 보일 말은 관리자만 쓸 수 있음
+create or replace function public.reserved_name(v text) returns boolean
+language sql immutable as $$
+  select regexp_replace(lower(coalesce(v, '')), '[\s._\-]', '', 'g')
+    ~ '(admin|official|wtodo|운영자|관리자|운영진|고객센터)'
+$$;
+
+create or replace function public.guard_profile_name() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if (public.reserved_name(new.username) or public.reserved_name(new.name))
+     and (tg_op = 'INSERT' or new.username is distinct from old.username or new.name is distinct from old.name)
+     and not public.is_admin() then
+    raise exception '운영자로 보일 수 있는 아이디나 이름은 쓸 수 없어요' using errcode = 'P0001', hint = 'reserved_name';
+  end if;
+  return new;
+end
+$$;
+drop trigger if exists profiles_guard_name on public.profiles;
+create trigger profiles_guard_name before insert or update on public.profiles
+  for each row execute function public.guard_profile_name();
+
+-- 템플릿 사용 기록: 누가 가져갔는지 한 줄씩. 같은 사람이 다시 가져가도 횟수는 그대로
+create table if not exists public.template_uses (
+  template_id uuid not null references public.templates on delete cascade,
+  user_id     uuid not null references auth.users on delete cascade,
+  created_at  timestamptz not null default now(),
+  primary key (template_id, user_id)
+);
+alter table public.template_uses enable row level security;
+revoke all on public.template_uses from anon, authenticated;
+
+create or replace function public.use_template(tid uuid) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null then return; end if;
+  insert into template_uses (template_id, user_id)
+  select id, auth.uid() from templates where id = tid and owner_id <> auth.uid()
+  on conflict do nothing;
+  if found then
+    update templates set uses = uses + 1 where id = tid;
+  end if;
+end
+$$;
+revoke execute on function public.use_template(uuid) from public, anon;
+grant execute on function public.use_template(uuid) to authenticated;
+
+-- ============================================================
 -- 동기화: 더 오래된 수정이 서버의 더 새로운 수정을 덮지 않게
 -- (오프라인이던 기기가 나중에 옛 내용을 올려도 무시됨. 이름이 *_keep_newer 라 *_touch 보다 먼저 실행됨)
 -- ============================================================

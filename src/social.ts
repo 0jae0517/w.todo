@@ -45,12 +45,14 @@ export async function getProfile(id: string) {
 export async function saveProfile(username: string, name: string) {
   const res = await db().from('profiles').upsert({ id: me(), username, name })
   if (res.error?.code === '23505') throw new Error('이미 쓰고 있는 아이디예요')
+  if (res.error?.code === '23514' && res.error.message.includes('profiles_name_len')) throw new Error('이름은 20자까지예요')
   if (res.error?.code === '23514') throw new Error('아이디는 영문 소문자, 숫자, _ . 로 3~20자예요')
   check(res)
 }
 
 export async function searchProfiles(q: string) {
-  const term = q.trim().toLowerCase().replace(/[%_\\]/g, '')
+  // , ( ) " also break PostgREST's or=(...) filter syntax
+  const term = q.trim().toLowerCase().replace(/[%_\\,()"*:]/g, '')
   if (!term) return []
   const rows = check(
     await db().from('profiles').select('id, username, name').or(`username.ilike.${term}%,name.ilike.%${term}%`).neq('id', me()).limit(20),

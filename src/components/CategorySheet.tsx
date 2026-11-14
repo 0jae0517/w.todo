@@ -35,6 +35,7 @@ export default function CategorySheet({ categories, focus, onClose }: { categori
                 aria-label="색 바꾸기"
               />
               <input
+                maxLength={30}
                 defaultValue={c.name}
                 onBlur={(e) => {
                   const v = e.target.value.trim()
@@ -89,6 +90,7 @@ export default function CategorySheet({ categories, focus, onClose }: { categori
       </ul>
       <div className="cat-add">
         <input
+          maxLength={30}
           autoFocus={!focus}
           placeholder="새 카테고리 추가"
           value={name}

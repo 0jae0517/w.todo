@@ -127,8 +127,8 @@ export function CourseSheet({ course, onClose }: { course?: Course; onClose: () 
 
   return (
     <Sheet onClose={onClose} title={course ? '수업 수정' : '수업 추가'}>
-      <input className="sheet-input" placeholder="수업 이름 (예: 자료구조)" value={title} onChange={(e) => setTitle(e.target.value)} autoFocus={!course} />
-      <input className="sheet-input small" placeholder="강의실 (선택)" value={room} onChange={(e) => setRoom(e.target.value)} />
+      <input maxLength={50} className="sheet-input" placeholder="수업 이름 (예: 자료구조)" value={title} onChange={(e) => setTitle(e.target.value)} autoFocus={!course} />
+      <input maxLength={30} className="sheet-input small" placeholder="강의실 (선택)" value={room} onChange={(e) => setRoom(e.target.value)} />
       <div className="swatches">
         {PALETTE.map((p) => (
           <button key={p} className={`swatch ${p === color ? 'on' : ''}`} style={{ background: p }} onClick={() => setColor(p)} aria-label="색상" />

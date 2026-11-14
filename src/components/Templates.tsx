@@ -165,7 +165,7 @@ export function TemplateMaker({ category, onClose }: { category: Category; onClo
         ))}
       </ul>
       <div className="cat-add">
-        <input placeholder="항목 직접 추가" value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && !e.nativeEvent.isComposing && addExtra()} />
+        <input maxLength={100} placeholder="항목 직접 추가" value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && !e.nativeEvent.isComposing && addExtra()} />
         <button className="icon-add" onClick={addExtra} aria-label="항목 추가" title="항목 추가">
           <PlusIcon />
         </button>
