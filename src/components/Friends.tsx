@@ -247,7 +247,7 @@ function FriendHome({ me, initialTab = 'following', onOpen, onEditProfile }: { m
   )
 }
 
-/** 시안 5: what the office looks like with friends in it, shown before signing in. */
+/** What the office looks like with friends in it, shown before signing in. */
 function OfficeEmpty() {
   const now = Date.now()
   const at = (min: number) => new Date(now + min * 60000).toISOString()
@@ -264,7 +264,7 @@ function OfficeEmpty() {
         <OfficeRoom all={all} meId="me" now={now} onTap={() => {}} />
       </div>
       <p className="empty-title">맞팔 친구와 한 방에서 집중해요</p>
-      <p className="sheet-sub">뽀모도로를 켜면 내 자리에 앉고, 쉬는 시간엔 소파로 가요.</p>
+      <p className="sheet-sub">뽀모도로를 켜면 내 자리에 앉아요.</p>
     </>
   )
 }
