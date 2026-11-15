@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { WEEKDAYS, addDays, dayLabel, fromKey, timeLabel, todayKey } from '../date'
-import { deleteTodo, repeatStreak, setRepeat, stopRepeat, updateTodo, useStore } from '../store'
+import { deleteTodo, repeatStreak, shownColor, setRepeat, stopRepeat, updateTodo, useStore } from '../store'
 import { focusOn, formatDuration } from '../pomodoro'
 import type { Reaction } from '../social'
 import type { Category, Todo } from '../types'
@@ -126,14 +126,17 @@ export default function TodoSheet({ todo, categories, reactions, onClose, onFocu
           }}
         />
       )}
-      <label className="field">
-        <span>카테고리</span>
-        <select value={todo.category_id} onChange={(e) => updateTodo(todo.id, { category_id: e.target.value })}>
+      <div className="pick-block">
+        <span className="pick-label">카테고리</span>
+        <div className="pick-chips">
           {categories.map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
+            <button key={c.id} className={todo.category_id === c.id ? 'on' : ''} onClick={() => updateTodo(todo.id, { category_id: c.id })}>
+              <span className="cat-dot" style={{ background: shownColor(c.color) }} />
+              {c.name}
+            </button>
           ))}
-        </select>
-      </label>
+        </div>
+      </div>
       <button
         className="danger"
         onClick={() => {

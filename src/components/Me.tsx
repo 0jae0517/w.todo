@@ -20,7 +20,7 @@ import Mascot from './Mascot'
 import { loadChalkFonts, setTheme, useTheme, type Theme } from '../theme'
 import { setTimetableOn, useTimetableOn } from '../timetable'
 import { useIsAdmin } from '../admin'
-import { ChevronRightIcon, PersonIcon, SparkleIcon, TomatoIcon } from './Icons'
+import { ChevronDownIcon, ChevronRightIcon, PersonIcon, SparkleIcon, TomatoIcon } from './Icons'
 import type { FollowTab } from './Friends'
 
 type View = 'summary' | 'grass' | 'focus' | 'recap'
@@ -50,6 +50,7 @@ export default function Me({ todos, categories, onOpenFollows }: { todos: Todo[]
     }
   }
   const ready = recapReady(todos, categories)
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   return (
     <div className="me">
@@ -63,9 +64,6 @@ export default function Me({ todos, categories, onOpenFollows }: { todos: Todo[]
           <ChevronRightIcon />
         </button>
       )}
-      <ThemePicker />
-      <TimetableToggle />
-      <RemindersToggle />
       <div className="seg" role="tablist">
         {VIEWS.map(([v, label]) => (
           <button key={v} role="tab" aria-selected={view === v} className={view === v ? 'on' : ''} onClick={() => pick(v)}>
@@ -89,13 +87,23 @@ export default function Me({ todos, categories, onOpenFollows }: { todos: Todo[]
         )}
         {view === 'recap' && <Recap todos={todos} categories={categories} />}
       </section>
-      <section className="export-row">
-        <span>내 데이터 내보내기</span>
-        <div className="actions">
-          <button onClick={() => exportCsv()}>할 일 CSV</button>
-          <button onClick={() => exportJson()}>전체 JSON</button>
+      <button className="settings-toggle" onClick={() => setSettingsOpen(!settingsOpen)} aria-expanded={settingsOpen}>
+        설정 <span className={`chev-inline ${settingsOpen ? 'open' : ''}`}><ChevronDownIcon /></span>
+      </button>
+      {settingsOpen && (
+        <div className="settings-box">
+          <ThemePicker />
+          <TimetableToggle />
+          <RemindersToggle />
+          <section className="export-row">
+            <span>내 데이터 내보내기</span>
+            <div className="actions">
+              <button onClick={() => exportCsv()}>할 일 CSV</button>
+              <button onClick={() => exportJson()}>전체 JSON</button>
+            </div>
+          </section>
         </div>
-      </section>
+      )}
     </div>
   )
 }
