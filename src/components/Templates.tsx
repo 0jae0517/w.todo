@@ -59,7 +59,7 @@ export function TemplateMaker({ category, onClose }: { category: Category; onClo
 
   const candidates = useMemo(() => {
     const list: TemplateItem[] = [
-      ...routines.filter((r) => r.category_id === category.id).map((r) => ({ title: r.title, time: r.time, days: [...r.days].sort() })),
+      ...routines.filter((r) => r.category_id === category.id).map((r) => ({ title: r.title, time: r.time, days: r.month_day || r.every > 1 ? [] : [...r.days].sort() })),
       ...todos.filter((t) => t.category_id === category.id && t.date === today && !t.routine_id).map((t) => ({ title: t.title, time: t.time, days: [] })),
     ]
     // the same line twice is noise

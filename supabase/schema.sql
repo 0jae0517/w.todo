@@ -813,3 +813,131 @@ begin
 end $$;
 
 notify pgrst, 'reload schema';
+
+-- ============================================================
+-- 2026-11-15 새 기능: 메모·체크리스트, D-day, 반복 종류(격주·매월·끝나는 날),
+-- 맞팔 친구 시간표 공유, 응원 한마디·콕 찌르기
+-- ============================================================
+
+-- 반복: 격주(every = 2), 매월(month_day), 끝나는 날(end_date)
+alter table public.routines add column if not exists every smallint not null default 1;
+alter table public.routines add column if not exists month_day smallint;
+alter table public.routines add column if not exists end_date date;
+alter table public.routines drop constraint if exists routines_every_check;
+alter table public.routines add constraint routines_every_check check (every in (1, 2));
+alter table public.routines drop constraint if exists routines_month_day_check;
+alter table public.routines add constraint routines_month_day_check check (month_day between 1 and 31);
+
+-- 할 일 메모·체크리스트: 할 일과 따로 두어 팔로워에게는 보이지 않음 (본인만)
+create table if not exists public.notes (
+  user_id    uuid not null default auth.uid() references auth.users on delete cascade,
+  id         text not null,                 -- 할 일 id
+  memo       text not null default '' check (char_length(memo) <= 2000),
+  items      jsonb not null default '[]' check (jsonb_typeof(items) = 'array' and jsonb_array_length(items) <= 50),
+  deleted    boolean not null default false,
+  updated_at timestamptz not null,
+  synced_at  timestamptz not null default now(),
+  primary key (user_id, id)
+);
+
+-- D-day (본인만)
+create table if not exists public.ddays (
+  user_id    uuid not null default auth.uid() references auth.users on delete cascade,
+  id         text not null,
+  title      text not null check (char_length(title) between 1 and 40),
+  date       date not null,
+  deleted    boolean not null default false,
+  updated_at timestamptz not null,
+  synced_at  timestamptz not null default now(),
+  primary key (user_id, id)
+);
+
+do $$
+declare t text;
+begin
+  foreach t in array array['notes', 'ddays'] loop
+    execute format('create index if not exists %I on public.%I (user_id, synced_at)', t || '_synced_idx', t);
+    execute format('drop trigger if exists %I on public.%I', t || '_touch', t);
+    execute format('create trigger %I before insert or update on public.%I for each row execute function public.touch_synced_at()', t || '_touch', t);
+    execute format('drop trigger if exists %I on public.%I', t || '_keep_newer', t);
+    execute format('create trigger %I before update on public.%I for each row execute function public.keep_newer()', t || '_keep_newer', t);
+    execute format('alter table public.%I enable row level security', t);
+    execute format('drop policy if exists %I on public.%I', 'own ' || t, t);
+    execute format('create policy %I on public.%I for all using (user_id = auth.uid()) with check (user_id = auth.uid())', 'own ' || t, t);
+    begin
+      execute format('alter publication supabase_realtime add table public.%I', t);
+    exception when duplicate_object or undefined_object then null;
+    end;
+  end loop;
+end $$;
+
+-- 시간표 공유: 켜 둔 사람의 수업은 맞팔 친구가 읽을 수 있음 (기본은 꺼짐)
+alter table public.profiles add column if not exists share_timetable boolean not null default false;
+drop policy if exists "mutual friends read shared courses" on public.courses;
+create policy "mutual friends read shared courses" on public.courses for select to authenticated
+  using (
+    not deleted
+    and public.is_mutual(user_id)
+    and exists (select 1 from public.profiles p where p.id = courses.user_id and p.share_timetable)
+  );
+
+-- 응원: 내가 팔로우하는 사람에게 콕 찌르기나 짧은 응원 한마디
+create table if not exists public.cheers (
+  id         uuid primary key default gen_random_uuid(),
+  from_id    uuid not null default auth.uid() references public.profiles on delete cascade,
+  to_id      uuid not null references public.profiles on delete cascade,
+  kind       text not null check (kind in ('poke', 'message')),
+  body       text not null default '',
+  read       boolean not null default false,
+  created_at timestamptz not null default now(),
+  check (from_id <> to_id),
+  check ((kind = 'poke' and body = '') or (kind = 'message' and char_length(btrim(body)) between 1 and 60))
+);
+create index if not exists cheers_inbox_idx on public.cheers (to_id, read, created_at desc);
+
+alter table public.cheers enable row level security;
+drop policy if exists "cheers readable" on public.cheers;
+create policy "cheers readable" on public.cheers for select to authenticated
+  using (to_id = auth.uid() or from_id = auth.uid());
+drop policy if exists "send cheer" on public.cheers;
+create policy "send cheer" on public.cheers for insert to authenticated
+  with check (from_id = auth.uid() and public.is_following(to_id) and not public.blocked_between(from_id, to_id));
+drop policy if exists "read cheer" on public.cheers;
+create policy "read cheer" on public.cheers for update to authenticated
+  using (to_id = auth.uid()) with check (to_id = auth.uid());
+drop policy if exists "remove cheer" on public.cheers;
+create policy "remove cheer" on public.cheers for delete to authenticated
+  using (to_id = auth.uid() or from_id = auth.uid());
+-- 받은 사람은 읽음 표시만 바꿀 수 있음
+revoke update on public.cheers from anon, authenticated;
+grant select, insert, delete on public.cheers to authenticated;
+grant update (read) on public.cheers to authenticated;
+
+-- 같은 사람에게 같은 종류는 3분에 한 번, 하루에 모두 합쳐 100개까지
+create or replace function public.guard_cheer() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  new.created_at := now();
+  new.read := false;
+  if exists (
+    select 1 from cheers
+    where from_id = new.from_id and to_id = new.to_id and kind = new.kind and created_at > now() - interval '3 minutes'
+  ) then
+    raise exception 'too_soon';
+  end if;
+  if (select count(*) from cheers where from_id = new.from_id and created_at > now() - interval '1 day') >= 100 then
+    raise exception 'too_many';
+  end if;
+  return new;
+end
+$$;
+drop trigger if exists cheers_guard on public.cheers;
+create trigger cheers_guard before insert on public.cheers
+  for each row execute function public.guard_cheer();
+
+do $$ begin
+  alter publication supabase_realtime add table public.cheers;
+exception when duplicate_object or undefined_object then null;
+end $$;
+
+notify pgrst, 'reload schema';

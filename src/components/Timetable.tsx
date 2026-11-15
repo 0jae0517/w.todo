@@ -1,4 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { getShareTimetable, setShareTimetable } from '../social'
+import { useSync } from '../sync'
+import { supabase } from '../supabase'
 import { WEEKDAYS, timeLabel, todayKey } from '../date'
 import { PALETTE, inkFor, deleteCourse, saveCourse, setTerm, useStore } from '../store'
 import { classesOn, currentTerm, termLabel, toMinutes, type ClassOnDay } from '../timetable'
@@ -20,14 +23,6 @@ export default function Timetable() {
   const [termOpen, setTermOpen] = useState(false)
   const term = currentTerm(courses)
 
-  const slots = courses.flatMap((c) => c.slots.map((s) => ({ course: c, slot: s })))
-  const used = new Set(slots.map((s) => s.slot.day))
-  const days = ORDER.filter((d) => d >= 1 && d <= 5 || used.has(d))
-  const first = Math.min(9, ...slots.map((s) => Math.floor(toMinutes(s.slot.start) / 60)))
-  const last = Math.max(18, ...slots.map((s) => Math.ceil(toMinutes(s.slot.end) / 60)))
-  const hours = Array.from({ length: last - first }, (_, i) => first + i)
-  const today = new Date().getDay()
-
   return (
     <main className="timetable">
       <div className="tt-head">
@@ -38,48 +33,74 @@ export default function Timetable() {
         <button className="primary tt-add" onClick={() => setEditing('new')}>+ 수업 추가</button>
       </div>
 
-      <div className="tt-grid" style={{ gridTemplateColumns: `28px repeat(${days.length}, 1fr)` }}>
-        <div />
-        {days.map((d) => (
-          <div key={d} className={`tt-day ${d === today ? 'today' : ''}`}>{WEEKDAYS[d]}</div>
-        ))}
-        <div className="tt-hours">
-          {hours.map((h) => (
-            <div key={h} style={{ height: HOUR }}>{h > 12 ? h - 12 : h}</div>
-          ))}
-        </div>
-        {days.map((d) => (
-          <div key={d} className="tt-col" style={{ height: hours.length * HOUR }}>
-            {hours.map((h) => (
-              <div key={h} className="tt-line" style={{ top: (h - first) * HOUR }} />
-            ))}
-            {slots
-              .filter((s) => s.slot.day === d)
-              .map(({ course, slot }, i) => (
-                <button
-                  key={course.id + i}
-                  className="tt-block"
-                  style={{
-                    top: ((toMinutes(slot.start) - first * 60) / 60) * HOUR,
-                    height: Math.max(22, ((toMinutes(slot.end) - toMinutes(slot.start)) / 60) * HOUR - 2),
-                    background: course.color,
-                    color: inkFor(course.color),
-                  }}
-                  onClick={() => setEditing(course)}
-                >
-                  <strong>{course.title}</strong>
-                  {course.room && <span>{course.room}</span>}
-                </button>
-              ))}
-          </div>
-        ))}
-      </div>
+      <TimetableGrid courses={courses} onTap={setEditing} />
 
       {!courses.length && <p className="sheet-sub tt-empty">수업을 추가하면 학기 동안 할 일 화면에도 그날 수업이 자동으로 보여요.</p>}
+      {courses.length > 0 && <ShareToggle />}
 
       {editing && <CourseSheet course={editing === 'new' ? undefined : editing} onClose={() => setEditing(null)} />}
       {termOpen && <TermSheet term={term} onClose={() => setTermOpen(false)} />}
     </main>
+  )
+}
+
+/**
+ * The weekly grid. `ghosts` are drawn as dashed outlines behind the
+ * real classes (my own classes, when looking at a friend's timetable).
+ */
+export function TimetableGrid({ courses, ghosts = [], onTap }: { courses: Course[]; ghosts?: Course[]; onTap?: (c: Course) => void }) {
+  const slots = courses.flatMap((c) => c.slots.map((s) => ({ course: c, slot: s })))
+  const ghostSlots = ghosts.flatMap((c) => c.slots.map((s) => ({ course: c, slot: s })))
+  const all = [...slots, ...ghostSlots]
+  const used = new Set(all.map((s) => s.slot.day))
+  const days = ORDER.filter((d) => (d >= 1 && d <= 5) || used.has(d))
+  const first = Math.min(9, ...all.map((s) => Math.floor(toMinutes(s.slot.start) / 60)))
+  const last = Math.max(18, ...all.map((s) => Math.ceil(toMinutes(s.slot.end) / 60)))
+  const hours = Array.from({ length: last - first }, (_, i) => first + i)
+  const today = new Date().getDay()
+  const top = (slot: Slot) => ((toMinutes(slot.start) - first * 60) / 60) * HOUR
+  const height = (slot: Slot) => Math.max(22, ((toMinutes(slot.end) - toMinutes(slot.start)) / 60) * HOUR - 2)
+
+  return (
+    <div className="tt-grid" style={{ gridTemplateColumns: `28px repeat(${days.length}, 1fr)` }}>
+      <div />
+      {days.map((d) => (
+        <div key={d} className={`tt-day ${d === today ? 'today' : ''}`}>{WEEKDAYS[d]}</div>
+      ))}
+      <div className="tt-hours">
+        {hours.map((h) => (
+          <div key={h} style={{ height: HOUR }}>{h > 12 ? h - 12 : h}</div>
+        ))}
+      </div>
+      {days.map((d) => (
+        <div key={d} className="tt-col" style={{ height: hours.length * HOUR }}>
+          {hours.map((h) => (
+            <div key={h} className="tt-line" style={{ top: (h - first) * HOUR }} />
+          ))}
+          {ghostSlots
+            .filter((s) => s.slot.day === d)
+            .map(({ course, slot }, i) => (
+              <div key={'g' + course.id + i} className="tt-ghost" style={{ top: top(slot), height: height(slot) }}>
+                <span>{course.title}</span>
+              </div>
+            ))}
+          {slots
+            .filter((s) => s.slot.day === d)
+            .map(({ course, slot }, i) => (
+              <button
+                key={course.id + i}
+                className="tt-block"
+                disabled={!onTap}
+                style={{ top: top(slot), height: height(slot), background: course.color, color: inkFor(course.color) }}
+                onClick={() => onTap?.(course)}
+              >
+                <strong>{course.title}</strong>
+                {course.room && <span>{course.room}</span>}
+              </button>
+            ))}
+        </div>
+      ))}
+    </div>
   )
 }
 
@@ -231,5 +252,40 @@ function TermSheet({ term, onClose }: { term: { term_start: string; term_end: st
         저장
       </button>
     </Sheet>
+  )
+}
+
+/** Lets mutual friends see my timetable (off by default). */
+function ShareToggle() {
+  const { session } = useSync()
+  const [on, setOn] = useState<boolean | null>(null)
+  const [err, setErr] = useState<string | null>(null)
+  useEffect(() => {
+    if (!supabase || !session) return
+    getShareTimetable().then(setOn).catch(() => setOn(null))
+  }, [session])
+  if (!supabase || !session || on === null) return null
+  return (
+    <div className="tt-toggle tt-share">
+      <span>
+        맞팔 친구에게 시간표 보여주기
+        <small>{err ?? '서로 팔로우하는 친구가 내 시간표를 보고 비는 시간을 맞춰 볼 수 있어요'}</small>
+      </span>
+      <button
+        className={`switch ${on ? 'on' : ''}`}
+        role="switch"
+        aria-checked={on}
+        aria-label="맞팔 친구에게 시간표 보여주기"
+        onClick={async () => {
+          try {
+            await setShareTimetable(!on)
+            setOn(!on)
+            setErr(null)
+          } catch (e) {
+            setErr(e instanceof Error ? e.message : String(e))
+          }
+        }}
+      />
+    </div>
   )
 }

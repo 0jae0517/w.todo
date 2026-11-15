@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import { addDays, fromKey, todayKey } from './date'
-import type { Category, Course, FocusSession, Kind, Routine, Row, Todo, Visibility } from './types'
+import type { Category, Course, Dday, FocusSession, Kind, Note, Routine, Row, SubItem, Todo, Visibility } from './types'
 
 /**
  * Local-first store. Everything lives in localStorage so the app works offline
@@ -46,6 +46,8 @@ interface Persisted {
   routines: Record<string, Routine>
   sessions: Record<string, FocusSession>
   courses: Record<string, Course>
+  notes: Record<string, Note>
+  ddays: Record<string, Dday>
   /** "todos:<id>" / "categories:<id>" keys not yet pushed to the server */
   dirty: string[]
   /** last server `synced_at` seen per table */
@@ -61,6 +63,10 @@ export interface State {
   /** oldest first */
   sessions: FocusSession[]
   courses: Course[]
+  /** by todo id */
+  notes: Record<string, Note>
+  /** soonest first */
+  ddays: Dday[]
 }
 
 const now = () => new Date().toISOString()
@@ -74,7 +80,15 @@ const newId = () => crypto.randomUUID()
 
 function initial(): Persisted {
   const def: Category = { id: 'default', name: '할 일', color: PALETTE[0], visibility: 'followers', allowed_ids: [], private: false, position: 0, deleted: false, updated_at: UNTOUCHED }
-  return { categories: { default: def }, todos: {}, routines: {}, sessions: {}, courses: {}, dirty: ['categories:default'], cursor: {}, userId: null }
+  return { categories: { default: def }, todos: {}, routines: {}, sessions: {}, courses: {}, notes: {}, ddays: {}, dirty: ['categories:default'], cursor: {}, userId: null }
+}
+
+/** Routines saved before monthly / every-other-week / end-date repeats existed. */
+function fillRoutine(r: Partial<Routine>) {
+  r.every ??= 1
+  r.month_day ??= null
+  r.end_date ??= null
+  r.days ??= []
 }
 
 function load(): Persisted {
@@ -94,6 +108,7 @@ function load(): Persisted {
         t.time ??= null
         t.routine_id ??= null
       }
+      for (const r of Object.values(db.routines)) fillRoutine(r)
       return db
     }
   } catch {
@@ -122,6 +137,10 @@ function derive(): State {
       .filter((s) => !s.deleted)
       .sort((a, b) => a.started_at.localeCompare(b.started_at)),
     courses: Object.values(db.courses).filter((c) => !c.deleted).map((c) => ({ ...c, color: shownColor(c.color) })),
+    notes: Object.fromEntries(Object.values(db.notes).filter((n) => !n.deleted).map((n) => [n.id, n])),
+    ddays: Object.values(db.ddays)
+      .filter((d) => !d.deleted)
+      .sort((a, b) => a.date.localeCompare(b.date)),
   }
 }
 
@@ -314,7 +333,7 @@ export function applyTemplate(items: { title: string; time: string | null; days:
   const t = now()
   items.forEach((it, i) => {
     if (it.days.length) {
-      put('routines', { id: newId(), title: it.title, category_id: categoryId, time: it.time, days: it.days, start_date: date, deleted: false, updated_at: t })
+      put('routines', { id: newId(), title: it.title, category_id: categoryId, time: it.time, days: it.days, start_date: date, every: 1, month_day: null, end_date: null, deleted: false, updated_at: t })
     } else {
       put('todos', {
         id: newId(),
@@ -336,21 +355,48 @@ export function applyTemplate(items: { title: string; time: string | null; days:
   generateRepeats()
 }
 
-/** Makes a todo repeat on the given weekdays (0 = Sunday), or changes its days. */
-export function setRepeat(todoId: string, days: number[]) {
+/** How a todo repeats. */
+export interface RepeatRule {
+  /** weekdays (0 = Sunday); ignored when month_day is set */
+  days: number[]
+  /** 1 = every week, 2 = every other week */
+  every: number
+  /** a day of the month, for monthly repeats */
+  month_day: number | null
+  end_date: string | null
+}
+
+/** Whether a routine has a todo on `date`. */
+export function repeatsOn(r: Pick<Routine, 'days' | 'every' | 'month_day' | 'start_date' | 'end_date'>, date: string) {
+  if (date < r.start_date || (r.end_date && date > r.end_date)) return false
+  const d = fromKey(date)
+  if (r.month_day) {
+    const last = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()
+    return d.getDate() === Math.min(r.month_day, last)
+  }
+  if (!r.days.includes(d.getDay())) return false
+  if ((r.every ?? 1) <= 1) return true
+  // whole Sunday-first weeks since the week it started
+  const start = fromKey(r.start_date)
+  const weeks = Math.round((fromKey(addDays(date, -d.getDay())).getTime() - fromKey(addDays(r.start_date, -start.getDay())).getTime()) / (7 * 864e5))
+  return weeks % r.every === 0
+}
+
+/** Makes a todo repeat by `rule`, or changes how it repeats. */
+export function setRepeat(todoId: string, rule: RepeatRule) {
   const todo = db.todos[todoId]
-  if (!todo || !days.length) return
+  if (!todo || (!rule.month_day && !rule.days.length)) return
   const t = now()
   const cur = todo.routine_id ? db.routines[todo.routine_id] : undefined
   const routine: Routine =
     cur && !cur.deleted
-      ? { ...cur, days, updated_at: t }
-      : { id: newId(), title: todo.title, category_id: todo.category_id, time: todo.time, days, start_date: todo.date, deleted: false, updated_at: t }
+      ? { ...cur, ...rule, updated_at: t }
+      : { id: newId(), title: todo.title, category_id: todo.category_id, time: todo.time, ...rule, start_date: todo.date, deleted: false, updated_at: t }
   put('routines', routine)
   if (todo.routine_id !== routine.id) put('todos', { ...todo, routine_id: routine.id, updated_at: t })
   // days that no longer match lose their upcoming copies
   for (const o of laterRepeats(routine.id, todo.date)) {
-    if (!days.includes(fromKey(o.date).getDay())) put('todos', { ...o, deleted: true, updated_at: t })
+    if (!repeatsOn(routine, o.date)) put('todos', { ...o, deleted: true, updated_at: t })
   }
   commit(true)
   generateRepeats()
@@ -380,9 +426,10 @@ export function generateRepeats() {
   for (const r of Object.values(db.routines)) {
     if (r.deleted) continue
     let d = r.start_date > addDays(today, -REPEAT_BACK) ? r.start_date : addDays(today, -REPEAT_BACK)
-    for (const end = addDays(today, REPEAT_AHEAD); d <= end; d = addDays(d, 1)) {
+    const until = addDays(today, REPEAT_AHEAD)
+    for (const end = r.end_date && r.end_date < until ? r.end_date : until; d <= end; d = addDays(d, 1)) {
       const id = `${r.id}@${d}`
-      if (!r.days.includes(fromKey(d).getDay()) || db.todos[id] || have.has(id)) continue
+      if (!repeatsOn(r, d) || db.todos[id] || have.has(id)) continue
       put('todos', {
         id,
         title: r.title,
@@ -446,6 +493,52 @@ export function setTerm(term_start: string, term_end: string) {
   commit(true)
 }
 
+// ---- memo and checklist ----
+
+const emptyNote = (id: string): Note => ({ id, memo: '', items: [], deleted: false, updated_at: now() })
+
+function putNote(todoId: string, patch: Partial<Pick<Note, 'memo' | 'items'>>) {
+  const cur = db.notes[todoId] ?? emptyNote(todoId)
+  put('notes', { ...cur, ...patch, deleted: false, updated_at: now() })
+  commit(true)
+}
+
+export const setMemo = (todoId: string, memo: string) => putNote(todoId, { memo })
+
+const itemsOf = (todoId: string) => db.notes[todoId]?.items ?? []
+
+export function addSubItem(todoId: string, title: string) {
+  putNote(todoId, { items: [...itemsOf(todoId), { id: newId(), title, done: false }] })
+}
+
+export function updateSubItem(todoId: string, id: string, patch: Partial<Omit<SubItem, 'id'>>) {
+  putNote(todoId, { items: itemsOf(todoId).map((it) => (it.id === id ? { ...it, ...patch } : it)) })
+}
+
+export function removeSubItem(todoId: string, id: string) {
+  putNote(todoId, { items: itemsOf(todoId).filter((it) => it.id !== id) })
+}
+
+// ---- D-day ----
+
+export function saveDday(d: { id?: string; title: string; date: string }) {
+  put('ddays', { id: d.id ?? newId(), title: d.title, date: d.date, deleted: false, updated_at: now() })
+  commit(true)
+}
+
+export function deleteDday(id: string) {
+  const cur = db.ddays[id]
+  if (!cur) return
+  put('ddays', { ...cur, deleted: true, updated_at: now() })
+  commit(true)
+}
+
+/** "D-3", "D-day", "D+2" */
+export function ddayLabel(date: string, today = todayKey()) {
+  const n = Math.round((fromKey(date).getTime() - fromKey(today).getTime()) / 864e5)
+  return n === 0 ? 'D-day' : n > 0 ? `D-${n}` : `D+${-n}`
+}
+
 // ---- sync support ----
 
 /** True when there are edits on this device the server hasn't received. */
@@ -461,7 +554,7 @@ export function resetLocal() {
 }
 
 export function pendingChanges() {
-  const out: { [K in Kind]: Row<K>[] } = { todos: [], categories: [], routines: [], sessions: [], courses: [] }
+  const out: { [K in Kind]: Row<K>[] } = { todos: [], categories: [], routines: [], sessions: [], courses: [], notes: [], ddays: [] }
   for (const key of dirty) {
     const i = key.indexOf(':')
     const kind = key.slice(0, i) as Kind
@@ -495,6 +588,11 @@ export function applyRemote<K extends Kind>(kind: K, rows: (Row<K> & { user_id?:
     } else if (kind === 'todos') {
       r.time ??= null
       r.routine_id ??= null
+    } else if (kind === 'routines') {
+      fillRoutine(r as Partial<Routine>)
+    } else if (kind === 'notes') {
+      r.memo ??= ''
+      r.items ??= []
     }
     const local = tbl[row.id]
     const localPending = dirty.has(`${kind}:${row.id}`)
@@ -527,7 +625,7 @@ export function bindUser(userId: string) {
   db.userId = userId
   db.cursor = {}
   for (const id of Object.keys(db.categories)) dirty.add(`categories:${id}`)
-  for (const kind of ['todos', 'routines', 'sessions', 'courses'] as const) for (const id of Object.keys(db[kind])) dirty.add(`${kind}:${id}`)
+  for (const kind of ['todos', 'routines', 'sessions', 'courses', 'notes', 'ddays'] as const) for (const id of Object.keys(db[kind])) dirty.add(`${kind}:${id}`)
   commit(false)
   return other
 }

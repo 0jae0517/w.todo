@@ -45,6 +45,12 @@ export interface Routine {
   days: number[]
   /** first day (YYYY-MM-DD) */
   start_date: string
+  /** weekly repeats: every week (1) or every other week (2), counted from start_date's week */
+  every: number
+  /** monthly repeats: this day of every month (the last day in shorter months); `days` is ignored */
+  month_day: number | null
+  /** last day it repeats on (YYYY-MM-DD), or null to keep going */
+  end_date: string | null
   deleted: boolean
   updated_at: string
 }
@@ -83,7 +89,34 @@ export interface Course {
   updated_at: string
 }
 
-export type Kind = 'todos' | 'categories' | 'routines' | 'sessions' | 'courses'
+/** One line of a todo's checklist. */
+export interface SubItem {
+  id: string
+  title: string
+  done: boolean
+}
+
+/** A todo's memo and checklist. Kept apart from the todo so followers, who can read todos, never see it. */
+export interface Note {
+  /** the todo's id */
+  id: string
+  memo: string
+  items: SubItem[]
+  deleted: boolean
+  updated_at: string
+}
+
+/** A day counted down to on the todo screen (an exam, a deadline). */
+export interface Dday {
+  id: string
+  title: string
+  /** YYYY-MM-DD */
+  date: string
+  deleted: boolean
+  updated_at: string
+}
+
+export type Kind = 'todos' | 'categories' | 'routines' | 'sessions' | 'courses' | 'notes' | 'ddays'
 export type Row<K extends Kind> = K extends 'todos'
   ? Todo
   : K extends 'categories'
@@ -92,4 +125,8 @@ export type Row<K extends Kind> = K extends 'todos'
       ? Routine
       : K extends 'sessions'
         ? FocusSession
-        : Course
+        : K extends 'courses'
+          ? Course
+          : K extends 'notes'
+            ? Note
+            : Dday

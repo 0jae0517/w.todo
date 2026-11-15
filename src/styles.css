@@ -1057,3 +1057,106 @@ button.p-status:disabled { cursor: default; }
 .empty-title { font-size: 16px; font-weight: 700; margin: 0 0 6px; color: var(--text); }
 .friends-empty.rich .sheet-sub { margin: 0 0 18px; }
 .friends-empty.rich .primary { min-width: 160px; }
+
+/* ---- todo sheet: memo, checklist, D-day, repeat kinds ---- */
+.memo-input {
+  width: 100%; resize: none; overflow: hidden; border: 0; outline: 0; background: transparent;
+  font: inherit; font-size: 14px; line-height: 1.5; color: var(--text); padding: 0 0 10px; margin: 0;
+}
+.memo-input::placeholder { color: var(--muted); opacity: 0.8; }
+.checklist { margin: 0 0 14px; }
+.checklist-head { font-size: 12px; color: var(--muted); margin: 0 0 4px; font-weight: 700; }
+.checklist-head span { margin-left: 4px; font-weight: 600; }
+.checklist ul { list-style: none; margin: 0; padding: 0; }
+.checklist li { display: flex; align-items: center; gap: 8px; min-height: 34px; border-bottom: 1px solid var(--sheet-line, var(--surface)); }
+.checklist li input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; font: inherit; font-size: 14px; color: var(--text); padding: 6px 0; }
+.checklist li.done input { color: var(--muted); text-decoration: line-through; }
+.sub-check { width: 18px; height: 18px; border-radius: 5px; border: 1.5px solid var(--muted); display: grid; place-items: center; flex: none; color: var(--on-accent); }
+.checklist li.done .sub-check { background: var(--accent); border-color: var(--accent); }
+.sub-check svg { width: 12px; height: 12px; }
+.sub-remove { color: var(--muted); opacity: 0.6; padding: 4px; display: grid; }
+.sub-remove svg { width: 14px; height: 14px; }
+.sub-add { border-bottom: 0 !important; }
+.sub-plus { width: 18px; display: grid; place-items: center; color: var(--muted); flex: none; }
+.sub-plus svg { width: 14px; height: 14px; }
+.dday-toggle { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 11px; margin-bottom: 10px; border-radius: 12px; background: var(--surface); font-size: 14px; color: var(--text); }
+.dday-toggle svg { width: 16px; height: 16px; }
+.dday-toggle.on { color: var(--accent); font-weight: 700; }
+.repeat-kinds { display: flex; gap: 4px; padding: 3px; margin-bottom: 10px; border-radius: 10px; background: var(--bg); }
+.repeat-kinds button { flex: 1; padding: 7px 0; border-radius: 8px; font-size: 13px; color: var(--muted); }
+.repeat-kinds button.on { background: var(--surface); color: var(--text); font-weight: 700; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08); }
+.repeat-note { font-size: 14px; margin: 4px 2px 10px; }
+.repeat-end { margin: 8px 0 4px; }
+.repeat-end-btns { display: flex; gap: 6px; }
+.repeat-box .time-btn { background: var(--bg); }
+.time-btn.ghost { color: var(--muted); font-weight: 500; }
+.p-meta .p-subs, .p-meta .p-memo { display: inline-flex; align-items: center; gap: 3px; }
+.p-meta .p-subs svg, .p-meta .p-memo svg { width: 12px; height: 12px; }
+.p-meta .p-subs.all { color: var(--accent); }
+
+/* ---- search ---- */
+.search-results { list-style: none; margin: 0; padding: 0; }
+.search-results li + li { border-top: 1px solid var(--line); }
+.search-results button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 2px; text-align: left; }
+.search-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.search-title { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.search-title.done { color: var(--muted); }
+.search-date { font-size: 12px; color: var(--muted); }
+.search-date svg { width: 11px; height: 11px; vertical-align: -1px; }
+.search-done { color: var(--accent); display: grid; }
+.search-done svg { width: 16px; height: 16px; }
+.search-empty { text-align: center; padding: 24px 0; }
+
+/* ---- D-day ---- */
+.dday-strip {
+  display: flex; align-items: center; gap: 8px; width: 100%; overflow: hidden; white-space: nowrap;
+  margin: 0 0 8px; padding: 8px 12px; border-radius: 12px; background: var(--surface); font-size: 13px; color: var(--text); text-align: left;
+}
+.dday-strip > svg { width: 15px; height: 15px; flex: none; color: var(--accent); }
+.dday-chip { overflow: hidden; text-overflow: ellipsis; flex: 0 1 auto; min-width: 0; }
+.dday-chip + .dday-chip::before { content: ''; display: inline-block; width: 1px; height: 10px; background: var(--muted); opacity: 0.5; margin: 0 8px 0 0; vertical-align: -1px; }
+.dday-chip strong { color: var(--accent); margin-right: 2px; }
+.dday-chip.today strong { color: var(--danger); }
+.dday-more { color: var(--muted); flex: none; }
+.dday-list { list-style: none; margin: 0 0 8px; padding: 0; }
+.dday-list li { display: flex; align-items: center; gap: 6px; border-bottom: 1px solid var(--line); }
+.dday-list li.past { opacity: 0.55; }
+.dday-row { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 10px; padding: 12px 2px; text-align: left; font-size: 14px; }
+.dday-row strong { min-width: 52px; color: var(--accent); }
+.dday-row-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dday-row .muted { font-size: 12px; }
+.dday-add { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 11px; border-radius: 12px; background: var(--surface); font-size: 14px; }
+.dday-add svg { width: 15px; height: 15px; }
+.dday-form-date { font-size: 14px; margin: 4px 0 8px; }
+.dday-form-date strong { color: var(--accent); }
+.dday-form .actions { margin-top: 10px; }
+.settings-row { width: 100%; text-align: left; color: var(--text); }
+.settings-row > svg { width: 18px; height: 18px; color: var(--muted); flex: none; }
+
+/* ---- cheers ---- */
+.cheers { margin: 0 0 10px; display: flex; flex-direction: column; gap: 6px; }
+.cheer-card { display: flex; align-items: center; gap: 10px; padding: 9px 8px 9px 12px; border-radius: 12px; background: color-mix(in srgb, var(--accent) 10%, var(--bg)); }
+.cheer-icon { color: var(--accent); display: grid; flex: none; }
+.cheer-icon svg { width: 18px; height: 18px; }
+.cheer-text { flex: 1; min-width: 0; text-align: left; font-size: 14px; color: var(--text); display: flex; flex-direction: column; gap: 1px; }
+.cheer-text span { overflow-wrap: anywhere; }
+.cheer-text small { font-size: 11px; color: var(--muted); }
+.cheer-close { color: var(--muted); padding: 6px; display: grid; }
+.cheer-close svg { width: 14px; height: 14px; }
+.cheer-all { align-self: flex-end; font-size: 12px; }
+.cheer-buttons { display: flex; gap: 8px; margin: 0 0 10px; }
+.cheer-buttons button { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 0; border-radius: 10px; background: var(--surface); font-size: 13px; color: var(--text); }
+.cheer-buttons svg { width: 16px; height: 16px; color: var(--accent); }
+.cheer-quick { margin-bottom: 12px; }
+.cheer-count { text-align: right; margin-top: -4px; }
+.tt-share { margin-top: 16px; }
+.tt-ghost {
+  position: absolute; left: 2px; right: 2px; border: 1.5px dashed var(--muted); border-radius: 6px;
+  font-size: 10px; color: var(--muted); padding: 2px 3px; overflow: hidden; pointer-events: none;
+}
+.tt-block:disabled { cursor: default; opacity: 1; }
+.friend-seg { margin: 0 0 10px; }
+.tt-overlay { display: flex; align-items: center; gap: 6px; font-size: 13px; margin: 0 0 8px; flex-wrap: wrap; }
+.tt-overlay small { color: var(--muted); font-size: 11px; }
+.tt-ghost { z-index: 1; }
+.dday-list .icon-btn { color: var(--muted); }

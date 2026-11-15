@@ -32,7 +32,7 @@ const VIEWS: [View, string][] = [
 ]
 const VIEW_KEY = 'todo-app:me-view'
 
-export default function Me({ todos, categories, onOpenFollows }: { todos: Todo[]; categories: Category[]; onOpenFollows: (tab: FollowTab) => void }) {
+export default function Me({ todos, categories, onOpenFollows, onOpenDdays }: { todos: Todo[]; categories: Category[]; onOpenFollows: (tab: FollowTab) => void; onOpenDdays: () => void }) {
   const { sessions } = useStore()
   const [view, setView] = useState<View>(() => {
     try {
@@ -95,6 +95,13 @@ export default function Me({ todos, categories, onOpenFollows }: { todos: Todo[]
           <ThemePicker />
           <TimetableToggle />
           <RemindersToggle />
+          <button className="tt-toggle settings-row" onClick={onOpenDdays}>
+            <span>
+              D-day 관리
+              <small>시험·마감일까지 남은 날을 할 일 화면 위에 보여줘요</small>
+            </span>
+            <ChevronRightIcon />
+          </button>
           <section className="export-row">
             <span>내 데이터 내보내기</span>
             <div className="actions">

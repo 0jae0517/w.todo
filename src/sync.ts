@@ -32,10 +32,12 @@ export const useSync = () =>
     () => state,
   )
 
-const KINDS: Kind[] = ['categories', 'routines', 'todos', 'sessions', 'courses']
+const KINDS: Kind[] = ['categories', 'routines', 'todos', 'sessions', 'courses', 'notes', 'ddays']
 
 /** A table the server doesn't have yet (schema.sql not re-run): skip it instead of failing the whole sync. */
 const missingTable = (e: { code?: string }) => e.code === 'PGRST205' || e.code === '42P01'
+/** A column the server doesn't have yet: keep those rows on this device until schema.sql is re-run. */
+const missingColumn = (e: { code?: string }) => e.code === 'PGRST204' || e.code === '42703'
 /** The server refused the data itself (a check, type or length rule), so sending it again won't help. */
 const badData = (e: { code?: string }) => /^(22|23)/.test(e.code ?? '')
 const PAGE = 1000
@@ -83,7 +85,7 @@ async function push(userId: string) {
       const send = (rows: typeof batch) =>
         supabase!.from(kind).upsert(rows.map((r) => ({ ...r, user_id: userId })), { onConflict: 'user_id,id', ignoreDuplicates: fresh })
       const { error } = await send(batch)
-      if (error && missingTable(error)) break
+      if (error && (missingTable(error) || missingColumn(error))) break
       if (error && badData(error)) {
         // one malformed row shouldn't hold back everything else: send them one by one
         // and give up on the ones the server refuses (they'd fail on every sync)

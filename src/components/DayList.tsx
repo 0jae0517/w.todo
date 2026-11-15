@@ -4,9 +4,10 @@ import { formatDuration } from '../pomodoro'
 import type { Reaction } from '../social'
 import { addCategory, addTodo, inkFor, reorderCategories, reorderTodos, updateTodo, useStore } from '../store'
 import type { Category, Todo } from '../types'
-import { HandCircleIcon, LockIcon, PersonIcon, PlusIcon, RepeatIcon, TomatoIcon } from './Icons'
+import { HandCircleIcon, ListCheckIcon, LockIcon, NoteIcon, PersonIcon, PlusIcon, RepeatIcon, TomatoIcon } from './Icons'
 import ReactionBar from './ReactionBar'
 import { repeatLabel } from './TodoSheet'
+import type { Routine } from '../types'
 import { useDragSort } from './useDragSort'
 
 interface Props {
@@ -134,8 +135,10 @@ export default function DayList({ date, categories, todos, reactions, myId, onOp
 
 /** manual order (a todo given a time is first slotted in by time, see updateTodo) */
 /** "매일", "평일", "월·수·금", "매주 월" */
-function shortRepeat(days: number[]) {
-  const label = repeatLabel(days)
+function shortRepeat(r: Routine) {
+  if (r.month_day) return `매월 ${r.month_day}일`
+  const label = repeatLabel(r.days)
+  if (r.every > 1) return `격주 ${label.replace('요일마다', '')}`
   return label.endsWith('요일마다') ? `매주 ${label.replace('요일마다', '')}` : label
 }
 
@@ -160,13 +163,17 @@ interface ItemsProps {
 function TodoItems({ items, color: c, editable, reactions, myId, onOpenTodo, onReact, onAddClick, adding, onAddDone }: ItemsProps) {
   const dnd = useDragSort(editable ? items.map((t) => t.id) : [], reorderTodos)
   // my own routines; a friend's list shows just the icon
-  const { routines } = useStore()
-  const repeatDays = new Map(editable ? routines.map((r) => [r.id, r.days] as const) : [])
+  const { routines, notes } = useStore()
+  const repeatOf = new Map(editable ? routines.map((r) => [r.id, r] as const) : [])
   // a tap that ends a drag shouldn't also tick or open the todo
   const tap = (fn: () => void) => () => !dnd.justDragged.current && fn()
   return (
     <ul className="p-rows">
       {items.map((t) => {
+        // memo and checklist are mine only (a friend's list never has them)
+        const note = editable ? notes[t.id] : undefined
+        const subs = note?.items ?? []
+        const hasMeta = t.time || t.focus_seconds > 0 || subs.length > 0 || !!note?.memo
         return (
           <li
             key={t.id}
@@ -180,16 +187,26 @@ function TodoItems({ items, color: c, editable, reactions, myId, onOpenTodo, onR
                 {t.routine_id && (
                   <span className="todo-repeat" title="반복">
                     <RepeatIcon />
-                    {repeatDays.get(t.routine_id) && <span>{shortRepeat(repeatDays.get(t.routine_id)!)}</span>}
+                    {repeatOf.get(t.routine_id) && <span>{shortRepeat(repeatOf.get(t.routine_id)!)}</span>}
                   </span>
                 )}
               </span>
-              {(t.time || t.focus_seconds > 0) && (
+              {hasMeta && (
                 <span className="p-meta" onClick={tap(() => onOpenTodo?.(t.id))}>
                   {t.time && <span className="todo-time">{timeLabel(t.time)}</span>}
                   {t.focus_seconds > 0 && (
                     <span className="tomato">
                       <TomatoIcon /> {formatDuration(t.focus_seconds)}
+                    </span>
+                  )}
+                  {subs.length > 0 && (
+                    <span className={`p-subs ${subs.every((x) => x.done) ? 'all' : ''}`}>
+                      <ListCheckIcon /> {subs.filter((x) => x.done).length}/{subs.length}
+                    </span>
+                  )}
+                  {note?.memo && (
+                    <span className="p-memo" title={note.memo}>
+                      <NoteIcon /> 메모
                     </span>
                   )}
                 </span>
