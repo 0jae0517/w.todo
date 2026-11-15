@@ -275,9 +275,11 @@ create index if not exists templates_listed_idx on public.templates (listed, use
 
 alter table public.templates enable row level security;
 
--- 링크를 아는 사람은 로그인하지 않아도 볼 수 있음 (id 는 추측할 수 없는 uuid)
+-- 목록에 공개한 것과 내 것만 표로 읽을 수 있음. "링크로만" 템플릿은 아래 get_template(id) 로만 열림
+-- (예전처럼 using (true) 면 앱에 든 공개 키로 표 전체를 조회해 링크 전용 템플릿까지 다 보였음)
 drop policy if exists "templates readable" on public.templates;
-create policy "templates readable" on public.templates for select to anon, authenticated using (true);
+create policy "templates readable" on public.templates for select to anon, authenticated
+  using (listed or owner_id = auth.uid());
 drop policy if exists "own templates insert" on public.templates;
 create policy "own templates insert" on public.templates for insert to authenticated
   with check (owner_id = auth.uid() and uses = 0);
@@ -298,6 +300,38 @@ language sql security definer set search_path = public as $$
 $$;
 revoke execute on function public.use_template(uuid) from public, anon;
 grant execute on function public.use_template(uuid) to authenticated;
+
+-- 링크(?t=<id>)로 템플릿 하나 열기: 로그인하지 않아도 되고, id 를 아는 것만 돌려줌
+create or replace function public.get_template(tid uuid) returns setof public.templates
+language sql stable security definer set search_path = public as $$
+  select * from templates where id = tid
+$$;
+revoke execute on function public.get_template(uuid) from public;
+grant execute on function public.get_template(uuid) to anon, authenticated;
+
+-- 템플릿 항목 형식 검사: 형식이 틀린 템플릿을 가져가면 그 사람의 동기화가 계속 실패했음
+-- [{ "title": 1~100자, "time": "HH:MM" 또는 null, "days": 0~6 숫자 배열 }]
+create or replace function public.valid_template_items(items jsonb) returns boolean
+language plpgsql immutable as $$
+declare it jsonb; d jsonb;
+begin
+  if jsonb_typeof(items) <> 'array' or jsonb_array_length(items) not between 1 and 50 then return false; end if;
+  for it in select * from jsonb_array_elements(items) loop
+    if jsonb_typeof(it) <> 'object' then return false; end if;
+    if coalesce(jsonb_typeof(it->'title'), '') <> 'string' or char_length(btrim(it->>'title')) not between 1 and 100 then return false; end if;
+    if coalesce(jsonb_typeof(it->'time'), 'null') <> 'null'
+       and not (jsonb_typeof(it->'time') = 'string' and (it->>'time') ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$') then return false; end if;
+    if coalesce(jsonb_typeof(it->'days'), '') <> 'array' then return false; end if;
+    for d in select * from jsonb_array_elements(it->'days') loop
+      if jsonb_typeof(d) <> 'number' or d::text !~ '^[0-6]$' then return false; end if;
+    end loop;
+  end loop;
+  return true;
+end
+$$;
+alter table public.templates drop constraint if exists templates_items_valid;
+-- not valid: 이미 있는 템플릿은 건드리지 않고, 새로 만들거나 고칠 때만 검사
+alter table public.templates add constraint templates_items_valid check (public.valid_template_items(items)) not valid;
 
 -- ============================================================
 -- 시간표 (대학생용): 수업 하나가 한 줄, 학기 기간 동안 매주 반복
@@ -495,7 +529,9 @@ grant execute on function public.admin_users(text, int, int) to authenticated;
 grant execute on function public.admin_set_ban(uuid, int) to authenticated;
 grant execute on function public.admin_delete_user(uuid) to authenticated;
 
--- 관리자는 누구의 템플릿이든 목록에서 내리거나 지울 수 있음
+-- 관리자는 누구의 템플릿이든 보고, 목록에서 내리거나 지울 수 있음
+drop policy if exists "admin templates read" on public.templates;
+create policy "admin templates read" on public.templates for select to authenticated using (public.is_admin());
 drop policy if exists "admin templates update" on public.templates;
 create policy "admin templates update" on public.templates for update to authenticated
   using (public.is_admin()) with check (public.is_admin());
@@ -635,6 +671,145 @@ begin
   if not exists (select 1 from public.admins) then
     raise notice 'w.todo.official@gmail.com 으로 가입하고 인증한 계정이 아직 없어요. 앱에서 가입한 뒤 다시 실행하세요.';
   end if;
+end $$;
+
+-- ============================================================
+-- 악용 방지: 글자 수 제한, 운영자 사칭 막기, 템플릿 사용 횟수는 한 사람당 한 번
+-- ============================================================
+-- 글자 수 제한 (not valid: 이미 있는 줄은 그대로 두고, 새로 쓰거나 고칠 때만 검사)
+do $$
+declare c record;
+begin
+  for c in select * from (values
+    ('todos', 'todos_title_len', 'char_length(title) <= 200'),
+    ('routines', 'routines_title_len', 'char_length(title) <= 200'),
+    ('categories', 'categories_name_len', 'char_length(name) <= 30'),
+    ('courses', 'courses_title_len', 'char_length(title) <= 50 and char_length(room) <= 30'),
+    ('profiles', 'profiles_name_len', 'char_length(name) <= 20')
+  ) as v(tbl, con, expr) loop
+    execute format('alter table public.%I drop constraint if exists %I', c.tbl, c.con);
+    execute format('alter table public.%I add constraint %I check (%s) not valid', c.tbl, c.con, c.expr);
+  end loop;
+end $$;
+
+-- 아이디·이름에 운영자로 보일 말은 관리자만 쓸 수 있음
+create or replace function public.reserved_name(v text) returns boolean
+language sql immutable as $$
+  select regexp_replace(lower(coalesce(v, '')), '[\s._\-]', '', 'g')
+    ~ '(admin|official|wtodo|운영자|관리자|운영진|고객센터)'
+$$;
+
+create or replace function public.guard_profile_name() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if (public.reserved_name(new.username) or public.reserved_name(new.name))
+     and (tg_op = 'INSERT' or new.username is distinct from old.username or new.name is distinct from old.name)
+     and not public.is_admin() then
+    raise exception '운영자로 보일 수 있는 아이디나 이름은 쓸 수 없어요' using errcode = 'P0001', hint = 'reserved_name';
+  end if;
+  return new;
+end
+$$;
+drop trigger if exists profiles_guard_name on public.profiles;
+create trigger profiles_guard_name before insert or update on public.profiles
+  for each row execute function public.guard_profile_name();
+
+-- 템플릿 사용 기록: 누가 가져갔는지 한 줄씩. 같은 사람이 다시 가져가도 횟수는 그대로
+create table if not exists public.template_uses (
+  template_id uuid not null references public.templates on delete cascade,
+  user_id     uuid not null references auth.users on delete cascade,
+  created_at  timestamptz not null default now(),
+  primary key (template_id, user_id)
+);
+alter table public.template_uses enable row level security;
+revoke all on public.template_uses from anon, authenticated;
+
+create or replace function public.use_template(tid uuid) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null then return; end if;
+  insert into template_uses (template_id, user_id)
+  select id, auth.uid() from templates where id = tid and owner_id <> auth.uid()
+  on conflict do nothing;
+  if found then
+    update templates set uses = uses + 1 where id = tid;
+  end if;
+end
+$$;
+revoke execute on function public.use_template(uuid) from public, anon;
+grant execute on function public.use_template(uuid) to authenticated;
+
+-- ============================================================
+-- 차단: 차단하면 서로의 팔로우가 끊기고, 상대는 나를 찾거나 다시 팔로우 요청할 수 없음
+-- ============================================================
+create table if not exists public.blocks (
+  blocker_id uuid not null default auth.uid() references public.profiles on delete cascade,
+  blocked_id uuid not null references public.profiles on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (blocker_id, blocked_id),
+  check (blocker_id <> blocked_id)
+);
+alter table public.blocks enable row level security;
+drop policy if exists "own blocks" on public.blocks;
+create policy "own blocks" on public.blocks for select to authenticated using (blocker_id = auth.uid());
+drop policy if exists "block" on public.blocks;
+create policy "block" on public.blocks for insert to authenticated with check (blocker_id = auth.uid());
+drop policy if exists "unblock" on public.blocks;
+create policy "unblock" on public.blocks for delete to authenticated using (blocker_id = auth.uid());
+revoke update on public.blocks from anon, authenticated;
+grant select, insert, delete on public.blocks to authenticated;
+
+-- 둘 중 한 사람이라도 상대를 차단했는지
+create or replace function public.blocked_between(a uuid, b uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from blocks where (blocker_id = a and blocked_id = b) or (blocker_id = b and blocked_id = a))
+$$;
+-- 이 사람이 나를 차단했는지 (차단한 사람의 프로필은 나에게 안 보임)
+create or replace function public.blocked_me(owner uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from blocks where blocker_id = owner and blocked_id = auth.uid())
+$$;
+
+-- 차단하면 양쪽 팔로우(요청 포함)를 지움
+create or replace function public.drop_follows_on_block() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  delete from follows
+  where (follower_id = new.blocker_id and followee_id = new.blocked_id)
+     or (follower_id = new.blocked_id and followee_id = new.blocker_id);
+  return null;
+end
+$$;
+drop trigger if exists blocks_drop_follows on public.blocks;
+create trigger blocks_drop_follows after insert on public.blocks
+  for each row execute function public.drop_follows_on_block();
+
+drop policy if exists "profiles readable" on public.profiles;
+create policy "profiles readable" on public.profiles for select to authenticated
+  using (not public.blocked_me(id));
+drop policy if exists "follow" on public.follows;
+create policy "follow" on public.follows for insert to authenticated
+  with check (follower_id = auth.uid() and not accepted and not public.blocked_between(follower_id, followee_id));
+
+-- ============================================================
+-- 동기화: 더 오래된 수정이 서버의 더 새로운 수정을 덮지 않게
+-- (오프라인이던 기기가 나중에 옛 내용을 올려도 무시됨. 이름이 *_keep_newer 라 *_touch 보다 먼저 실행됨)
+-- ============================================================
+create or replace function public.keep_newer() returns trigger language plpgsql as $$
+begin
+  if new.updated_at < old.updated_at then
+    return null;
+  end if;
+  return new;
+end $$;
+
+do $$
+declare t text;
+begin
+  foreach t in array array['todos', 'categories', 'routines', 'sessions', 'courses'] loop
+    execute format('drop trigger if exists %I on public.%I', t || '_keep_newer', t);
+    execute format('create trigger %I before update on public.%I for each row execute function public.keep_newer()', t || '_keep_newer', t);
+  end loop;
 end $$;
 
 notify pgrst, 'reload schema';

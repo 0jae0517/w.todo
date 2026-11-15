@@ -234,6 +234,7 @@ function NewCategoryInput({ onDone }: { onDone: () => void }) {
   }
   return (
     <input
+      maxLength={30}
       className="p-cat-input"
       autoFocus
       enterKeyHint="done"
@@ -260,6 +261,7 @@ function NewTodoInput({ onSubmit, onDone }: { onSubmit: (title: string) => void;
   }
   return (
     <input
+      maxLength={200}
       className="todo-input"
       autoFocus
       enterKeyHint="done"

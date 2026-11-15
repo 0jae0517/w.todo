@@ -4,6 +4,8 @@ import { Capacitor } from '@capacitor/core'
 import { LocalNotifications } from '@capacitor/local-notifications'
 import { finishKakaoLogin, kakaoDirect, kakaoLoginUrl } from './kakao'
 import { supabase } from './supabase'
+import { canGoBack } from './back'
+import { tell } from './dialogs'
 
 /** True inside the Android (Capacitor) app, false on the web. */
 export const isNative = Capacitor.isNativePlatform()
@@ -45,7 +47,7 @@ async function finishLogin(url: string) {
   try {
     if (await finishKakaoLogin(u.hash)) return
   } catch (e) {
-    return alert(e instanceof Error ? e.message : String(e))
+    return void tell('로그인하지 못했어요', e instanceof Error ? e.message : String(e))
   }
   const params = new URLSearchParams(u.hash.slice(1) || u.search.slice(1))
   const access_token = params.get('access_token')
@@ -61,9 +63,9 @@ export function startNative(onTemplateLink: (id: string) => void) {
     const t = new URL(url).searchParams.get('t')
     if (t) onTemplateLink(t)
   })
-  // back closes an open sheet first (sheets close on Escape), then leaves the app
+  // back closes what's open first (a sheet, a dialog, another tab; see back.ts), then leaves the app
   App.addListener('backButton', () => {
-    if (document.querySelector('.backdrop')) window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    if (canGoBack()) history.back()
     else App.minimizeApp()
   })
 }

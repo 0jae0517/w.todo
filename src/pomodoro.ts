@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react'
-import { todayKey } from './date'
+import { toKey } from './date'
 import { scheduleTimerAlert } from './native'
 import { addSession, getState, updateTodo } from './store'
 
@@ -129,13 +129,27 @@ export function setSettings(patch: Partial<Settings>) {
 }
 
 function finish() {
+  // another tab may have finished this phase already (its write is in storage before its event reaches us)
+  let stored: string | null = null
+  try {
+    stored = localStorage.getItem(KEY)
+  } catch {
+    // storage blocked: this tab is the only one that can run the timer
+  }
+  if (stored && (JSON.parse(stored) as TimerState).endsAt !== state.endsAt) {
+    state = load()
+    listeners.forEach((l) => l())
+    return
+  }
   const wasFocus = state.phase === 'focus'
   if (wasFocus) {
-    const day = todayKey()
+    // counted when it actually ended, not when the app was next opened
+    const endedAt = state.endsAt ?? Date.now()
+    const day = toKey(new Date(endedAt))
     set({ history: { ...state.history, [day]: (state.history[day] ?? 0) + 1 } })
     const todo = state.todoId ? getState().todos.find((t) => t.id === state.todoId) : undefined
     const seconds = state.settings.focus * 60
-    addSession(new Date(Date.now() - seconds * 1000).toISOString(), seconds, todo?.id ?? null)
+    addSession(new Date(endedAt - seconds * 1000).toISOString(), seconds, todo?.id ?? null)
     if (todo)
       updateTodo(todo.id, {
         pomodoros: (todo.pomodoros ?? 0) + 1,
@@ -148,11 +162,20 @@ function finish() {
 
 function notify(body: string) {
   beep()
-  try {
-    if ('Notification' in window && Notification.permission === 'granted') new Notification('뽀모도로', { body, icon: '/icon-192.png' })
-  } catch {
-    // some mobile browsers only allow notifications from a service worker
-  }
+  if (!('Notification' in window) || Notification.permission !== 'granted') return
+  const options = { body, icon: '/icon-192.png', tag: 'pomodoro' }
+  // Android Chrome (and installed web apps) only show notifications through the service worker
+  const viaWorker = navigator.serviceWorker?.getRegistration().then((reg) => {
+    if (!reg) throw new Error('no service worker')
+    return reg.showNotification('뽀모도로', options)
+  })
+  ;(viaWorker ?? Promise.reject()).catch(() => {
+    try {
+      new Notification('뽀모도로', options)
+    } catch {
+      // notifications unavailable; the beep still plays
+    }
+  })
 }
 
 function beep() {
@@ -177,4 +200,10 @@ export function startTimerLoop() {
   setInterval(() => {
     if (state.endsAt && Date.now() >= state.endsAt) finish()
   }, 500)
+  // keep every open tab on the same timer, so a phase is only counted once
+  window.addEventListener('storage', (e) => {
+    if (e.key !== KEY) return
+    state = load()
+    listeners.forEach((l) => l())
+  })
 }

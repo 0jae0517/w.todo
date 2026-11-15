@@ -6,6 +6,7 @@ import type { Category, Visibility } from '../types'
 import { FriendsIcon, LockIcon, PersonIcon, PlusIcon, ShareIcon, TrashIcon } from './Icons'
 import Sheet from './Sheet'
 import { TemplateMaker } from './Templates'
+import { ask } from '../dialogs'
 
 /** `focus`: opened by tapping that category on the todo list, so it is shown first with its colours open */
 export default function CategorySheet({ categories, focus, onClose }: { categories: Category[]; focus?: string; onClose: () => void }) {
@@ -35,6 +36,7 @@ export default function CategorySheet({ categories, focus, onClose }: { categori
                 aria-label="색 바꾸기"
               />
               <input
+                maxLength={30}
                 defaultValue={c.name}
                 onBlur={(e) => {
                   const v = e.target.value.trim()
@@ -46,7 +48,9 @@ export default function CategorySheet({ categories, focus, onClose }: { categori
               </button>
               <button
                 className="icon-btn"
-                onClick={() => confirm(`'${c.name}' 카테고리와 그 안의 할 일을 모두 삭제할까요?`) && deleteCategory(c.id)}
+                onClick={async () => {
+                  if (await ask({ title: `'${c.name}' 카테고리를 삭제할까요?`, message: '그 안의 할 일도 모두 삭제돼요.', confirmLabel: '삭제', danger: true })) deleteCategory(c.id)
+                }}
                 aria-label="삭제"
                 title="삭제"
               >
@@ -89,6 +93,7 @@ export default function CategorySheet({ categories, focus, onClose }: { categori
       </ul>
       <div className="cat-add">
         <input
+          maxLength={30}
           autoFocus={!focus}
           placeholder="새 카테고리 추가"
           value={name}

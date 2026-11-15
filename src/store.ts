@@ -125,12 +125,19 @@ function derive(): State {
   }
 }
 
+/** True while the last save to this device failed (storage full or blocked). */
+let saveFailed = false
+export const saveFailing = () => saveFailed
+
 function commit(localChange: boolean) {
   db.dirty = [...dirty]
   try {
     localStorage.setItem(KEY, JSON.stringify(db))
+    saveFailed = false
   } catch {
-    // storage full or blocked; keep running in memory
+    // storage full or blocked: keep running in memory and say so (App shows a warning),
+    // since anything not yet on the server is lost when the page reloads
+    saveFailed = true
   }
   snapshot = derive()
   listeners.forEach((l) => l())
@@ -503,15 +510,24 @@ export function applyRemote<K extends Kind>(kind: K, rows: (Row<K> & { user_id?:
 export const getCursor = (kind: Kind) => db.cursor[kind] ?? null
 
 /**
- * Called when an account signs in. If the local data belongs to no account or
- * to a different one, everything local is queued for upload and the cursors
- * reset so the full server copy is pulled.
+ * Called when an account signs in. Local data made without an account is
+ * queued for upload into it. Data left behind by a different account (signed
+ * out by an expired session, a ban or deletion elsewhere, not the sign-out
+ * button) is wiped instead, so it never ends up in this person's account.
+ * Either way the cursors reset so the full server copy is pulled.
+ * Returns true when another account's data was wiped.
  */
 export function bindUser(userId: string) {
-  if (db.userId === userId) return
+  if (db.userId === userId) return false
+  const other = db.userId !== null
+  if (other) {
+    db = initial()
+    dirty = new Set(db.dirty)
+  }
   db.userId = userId
   db.cursor = {}
   for (const id of Object.keys(db.categories)) dirty.add(`categories:${id}`)
   for (const kind of ['todos', 'routines', 'sessions', 'courses'] as const) for (const id of Object.keys(db[kind])) dirty.add(`${kind}:${id}`)
   commit(false)
+  return other
 }

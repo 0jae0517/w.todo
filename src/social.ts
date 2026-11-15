@@ -45,12 +45,14 @@ export async function getProfile(id: string) {
 export async function saveProfile(username: string, name: string) {
   const res = await db().from('profiles').upsert({ id: me(), username, name })
   if (res.error?.code === '23505') throw new Error('이미 쓰고 있는 아이디예요')
+  if (res.error?.code === '23514' && res.error.message.includes('profiles_name_len')) throw new Error('이름은 20자까지예요')
   if (res.error?.code === '23514') throw new Error('아이디는 영문 소문자, 숫자, _ . 로 3~20자예요')
   check(res)
 }
 
 export async function searchProfiles(q: string) {
-  const term = q.trim().toLowerCase().replace(/[%_\\]/g, '')
+  // , ( ) " also break PostgREST's or=(...) filter syntax
+  const term = q.trim().toLowerCase().replace(/[%_\\,()"*:]/g, '')
   if (!term) return []
   const rows = check(
     await db().from('profiles').select('id, username, name').or(`username.ilike.${term}%,name.ilike.%${term}%`).neq('id', me()).limit(20),
@@ -109,6 +111,25 @@ export async function acceptRequest(id: string) {
 /** Declines a request, or removes someone who already follows me. */
 export async function removeFollower(id: string) {
   check(await db().from('follows').delete().eq('follower_id', id).eq('followee_id', me()))
+}
+
+// ---- blocking ----
+
+/** Blocks someone: follows both ways end, and they can't find or follow me any more. */
+export async function block(id: string) {
+  const res = await db().from('blocks').insert({ blocker_id: me(), blocked_id: id })
+  if (res.error?.code === '23505') return // already blocked
+  check(res)
+}
+
+export async function unblock(id: string) {
+  check(await db().from('blocks').delete().eq('blocker_id', me()).eq('blocked_id', id))
+}
+
+/** People I've blocked. */
+export async function listBlocked() {
+  const rows = check(await db().from('blocks').select('p:profiles!blocks_blocked_id_fkey(id, username, name)').eq('blocker_id', me()))
+  return (rows ?? []).map((r) => r.p as unknown as Profile).filter(Boolean)
 }
 
 // ---- a friend's todos ----

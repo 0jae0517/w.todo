@@ -7,6 +7,7 @@ import { clearTimer } from './pomodoro'
 import { leaveOffice } from './office'
 import { UNTOUCHED, applyRemote, bindUser, generateRepeats, getCursor, hasPending, markPushed, onLocalChange, pendingChanges, resetLocal } from './store'
 import type { Kind } from './types'
+import { ask, tell } from './dialogs'
 
 export type SyncStatus = 'off' | 'signed-out' | 'syncing' | 'synced' | 'offline' | 'error'
 
@@ -35,6 +36,8 @@ const KINDS: Kind[] = ['categories', 'routines', 'todos', 'sessions', 'courses']
 
 /** A table the server doesn't have yet (schema.sql not re-run): skip it instead of failing the whole sync. */
 const missingTable = (e: { code?: string }) => e.code === 'PGRST205' || e.code === '42P01'
+/** The server refused the data itself (a check, type or length rule), so sending it again won't help. */
+const badData = (e: { code?: string }) => /^(22|23)/.test(e.code ?? '')
 const PAGE = 1000
 
 let running = false
@@ -77,10 +80,21 @@ async function push(userId: string) {
     for (const fresh of [false, true]) {
       const batch = rows.filter((r) => (r.updated_at === UNTOUCHED) === fresh)
       if (!batch.length) continue
-      const { error } = await supabase!
-        .from(kind)
-        .upsert(batch.map((r) => ({ ...r, user_id: userId })), { onConflict: 'user_id,id', ignoreDuplicates: fresh })
+      const send = (rows: typeof batch) =>
+        supabase!.from(kind).upsert(rows.map((r) => ({ ...r, user_id: userId })), { onConflict: 'user_id,id', ignoreDuplicates: fresh })
+      const { error } = await send(batch)
       if (error && missingTable(error)) break
+      if (error && badData(error)) {
+        // one malformed row shouldn't hold back everything else: send them one by one
+        // and give up on the ones the server refuses (they'd fail on every sync)
+        for (const row of batch) {
+          const res = await send([row])
+          if (res.error && !badData(res.error)) throw new Error(res.error.message)
+          if (res.error) console.warn(`sync: server refused ${kind}/${row.id}:`, res.error.message)
+          markPushed(kind, [row])
+        }
+        continue
+      }
       if (error) throw new Error(error.message)
       markPushed(kind, batch)
     }
@@ -134,7 +148,8 @@ export function startSync() {
     const prev = state.session?.user.id
     set({ session, status: session ? state.status : 'signed-out' })
     if (session && session.user.id !== prev) {
-      bindUser(session.user.id)
+      // another account's leftovers were wiped: its timer goes too
+      if (bindUser(session.user.id)) clearTimer()
       unlisten()
       listen(session.user.id)
       syncNow()
@@ -147,7 +162,7 @@ export function startSync() {
   if (location.hash.includes('kakao_')) {
     const fragment = location.hash
     history.replaceState(null, '', location.pathname + location.search)
-    finishKakaoLogin(fragment).catch((e) => alert(e instanceof Error ? e.message : String(e)))
+    finishKakaoLogin(fragment).catch((e) => tell('로그인하지 못했어요', e instanceof Error ? e.message : String(e)))
   }
   onLocalChange(scheduleSync)
   window.addEventListener('online', () => syncNow())
@@ -176,7 +191,12 @@ export async function signOut() {
   await syncNow()
   if (
     hasPending() &&
-    !confirm('아직 서버에 올라가지 않은 변경이 있어요. 로그아웃하면 이 기기에서 사라져요. 그래도 로그아웃할까요?')
+    !(await ask({
+      title: '그래도 로그아웃할까요?',
+      message: '아직 서버에 올라가지 않은 변경이 있어요. 로그아웃하면 이 기기에서 사라져요.',
+      confirmLabel: '로그아웃',
+      danger: true,
+    }))
   )
     return
   // friends stop seeing me in the office right away

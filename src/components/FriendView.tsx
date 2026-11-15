@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { addDays, dayLabel, monthGrid, todayKey } from '../date'
 import { holidayName } from '../holidays'
-import { byTodo, followingIds, follow, friendData, react, reactionsFor, unfollow, unreact, type FollowState, type Profile, type Reaction } from '../social'
+import { block, byTodo, followingIds, follow, friendData, react, reactionsFor, unfollow, unreact, type FollowState, type Profile, type Reaction } from '../social'
 import { currentUserId } from '../sync'
 import type { Category, Todo } from '../types'
 import Calendar, { type DayStat } from './Calendar'
@@ -10,6 +10,7 @@ import Heatmap from './Heatmap'
 import { ReportLink } from './Admin'
 import { ChevronLeftIcon } from './Icons'
 import { UnfollowConfirm } from './ConfirmDialog'
+import { ask, toast } from '../dialogs'
 
 export const FOLLOW_LABEL = { following: '팔로잉', requested: '요청됨', none: '팔로우' }
 
@@ -164,7 +165,35 @@ export default function FriendView({ friend, onBack }: { friend: Profile; onBack
           )}
         </>
       )}
-      {myId && myId !== friend.id && <ReportLink type="profile" id={friend.id} />}
+      {myId && myId !== friend.id && (
+        <div className="friend-safety">
+          <button
+            className="link danger"
+            onClick={async () => {
+              const name = friend.name || friend.username
+              const ok = await ask({
+                title: `${name}님을 차단할까요?`,
+                message: '서로 팔로우가 끊기고, 상대는 나를 찾거나 다시 팔로우 요청할 수 없어요. 내 정보 → 계정에서 풀 수 있어요.',
+                confirmLabel: '차단',
+                danger: true,
+              })
+              if (!ok) return
+              try {
+                await block(friend.id)
+                setState(null)
+                setData({ categories: [], todos: [] })
+                toast(`${name}님을 차단했어요`)
+                onBack?.()
+              } catch (e) {
+                setErr(e instanceof Error ? e.message : String(e))
+              }
+            }}
+          >
+            차단하기
+          </button>
+          <ReportLink type="profile" id={friend.id} />
+        </div>
+      )}
     </div>
   )
 }

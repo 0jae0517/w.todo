@@ -21,6 +21,7 @@ import FriendView, { FOLLOW_LABEL } from './FriendView'
 import Office from './Office'
 import Sheet from './Sheet'
 import { TemplateGallery } from './Templates'
+import { ask } from '../dialogs'
 
 /** The 오피스 tab: needs a login and a profile, like everything with friends. */
 export function OfficeTab({ onLogin, onOpenFriend }: { onLogin: () => void; onOpenFriend: (p: Profile) => void }) {
@@ -110,7 +111,7 @@ export function ProfileForm({ onSaved, initial }: { onSaved: () => void; initial
       <h2 className="sheet-title">{initial ? '프로필 수정' : '프로필 만들기'}</h2>
       <p className="sheet-sub">친구가 아이디로 나를 찾아 팔로우할 수 있어요.</p>
       <input required placeholder="아이디 (영문 소문자, 숫자, _ .)" value={username} pattern="[a-zA-Z0-9_.]{3,20}" onChange={(e) => setUsername(e.target.value)} />
-      <input placeholder="이름 (선택)" value={name} onChange={(e) => setName(e.target.value)} />
+      <input maxLength={20} placeholder="이름 (선택)" value={name} onChange={(e) => setName(e.target.value)} />
       <button className="primary" disabled={busy}>저장</button>
       {err && <p className="error">{err}</p>}
     </form>
@@ -213,7 +214,9 @@ function FriendHome({ me, initialTab = 'following', onOpen, onEditProfile }: { m
               </span>
             </button>
             {tab === 'followers' && !results && (
-              <button className="link danger" onClick={() => confirm(`${p.name || p.username}님을 팔로워에서 삭제할까요?`) && run(removeFollower(p.id))}>
+              <button className="link danger" onClick={async () => {
+                  if (await ask({ title: `${p.name || p.username}님을 팔로워에서 삭제할까요?`, confirmLabel: '삭제', danger: true })) run(removeFollower(p.id))
+                }}>
                 삭제
               </button>
             )}

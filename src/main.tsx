@@ -3,10 +3,8 @@ import { createRoot } from 'react-dom/client'
 import App from './App'
 import { isNative } from './native'
 import { startTimerLoop } from './pomodoro'
+import { startReminders } from './reminders'
 import { startSync } from './sync'
-import '@fontsource/gaegu/400.css'
-import '@fontsource/gaegu/700.css'
-import '@fontsource/gamja-flower/400.css'
 import './styles.css'
 import { applyTheme } from './theme'
 import { trackVisualViewport } from './viewport'
@@ -15,6 +13,7 @@ applyTheme()
 trackVisualViewport()
 startSync()
 startTimerLoop()
+startReminders()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
