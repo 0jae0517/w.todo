@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { todayKey } from '../date'
 import { PHASE_LABEL, formatDuration, pause, phaseLength, reset, setSettings, setTodo, skip, start, timeLeft, useTimer, type Settings } from '../pomodoro'
+import { shownColor, useStore } from '../store'
 import type { Todo } from '../types'
 import Mascot from './Mascot'
 import { ChevronDownIcon, ResetIcon, SkipIcon, TomatoIcon } from './Icons'
@@ -28,6 +29,7 @@ export default function Pomodoro({ todos }: { todos: Todo[] }) {
   const R = 110
   const C = 2 * Math.PI * R
   const today = todayKey()
+  const { categories } = useStore()
   const candidates = todos.filter((x) => (x.date === today && !x.done) || x.id === t.todoId)
   const current = todos.find((x) => x.id === t.todoId)
 
@@ -69,15 +71,24 @@ export default function Pomodoro({ todos }: { todos: Todo[] }) {
         </button>
       </div>
 
-      <label className="field">
-        <span>집중할 일</span>
-        <select value={t.todoId ?? ''} onChange={(e) => setTodo(e.target.value || null)}>
-          <option value="">선택 안 함</option>
-          {candidates.map((x) => (
-            <option key={x.id} value={x.id}>{x.title}{x.date !== today ? ` (${x.date.slice(5).replace('-', '/')})` : ''}</option>
-          ))}
-        </select>
-      </label>
+      <div className="pick-block">
+        <span className="pick-label">집중할 일</span>
+        <div className="pick-list">
+          <button className={!t.todoId ? 'on' : ''} onClick={() => setTodo(null)}>
+            선택 안 함
+          </button>
+          {candidates.map((x) => {
+            const cat = categories.find((c) => c.id === x.category_id)
+            return (
+              <button key={x.id} className={t.todoId === x.id ? 'on' : ''} onClick={() => setTodo(x.id)}>
+                <span className="cat-dot" style={{ background: cat ? shownColor(cat.color) : 'var(--surface)' }} />
+                {x.title}
+                {x.date !== today && <span className="pick-date">{x.date.slice(5).replace('-', '/')}</span>}
+              </button>
+            )
+          })}
+        </div>
+      </div>
 
       <p className="sheet-sub">오늘 집중 {t.history[today] ?? 0}회</p>
 

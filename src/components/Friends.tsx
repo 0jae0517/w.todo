@@ -18,7 +18,7 @@ import {
 import { useSync } from '../sync'
 import { UnfollowConfirm } from './ConfirmDialog'
 import FriendView, { FOLLOW_LABEL } from './FriendView'
-import Office from './Office'
+import Office, { OfficeRoom } from './Office'
 import Sheet from './Sheet'
 import { TemplateGallery } from './Templates'
 import { ask } from '../dialogs'
@@ -26,7 +26,7 @@ import { ask } from '../dialogs'
 /** The 오피스 tab: needs a login and a profile, like everything with friends. */
 export function OfficeTab({ onLogin, onOpenFriend }: { onLogin: () => void; onOpenFriend: (p: Profile) => void }) {
   return (
-    <SignedIn onLogin={onLogin}>
+    <SignedIn onLogin={onLogin} empty={<OfficeEmpty />}>
       {() => <Office onOpenFriend={onOpenFriend} />}
     </SignedIn>
   )
@@ -65,14 +65,14 @@ export function FriendsSheet({ tab, friend, onClose, onLogin }: { tab?: FollowTa
 }
 
 /** Renders `children` once signed in with a profile; otherwise a way to get there. */
-function SignedIn({ onLogin, children }: { onLogin: () => void; children: (profile: Profile, reload: () => void) => ReactNode }) {
+function SignedIn({ onLogin, children, empty }: { onLogin: () => void; empty?: ReactNode; children: (profile: Profile, reload: () => void) => ReactNode }) {
   const { session } = useSync()
   const { profile, reload } = useMyProfile()
 
   if (!supabase || !session) {
     return (
-      <div className="friends-empty">
-        <p>친구 기능은 로그인하면 쓸 수 있어요.</p>
+      <div className={`friends-empty ${empty ? 'rich' : ''}`}>
+        {empty ?? <p>친구 기능은 로그인하면 쓸 수 있어요.</p>}
         {supabase ? (
           <button className="primary" onClick={onLogin}>로그인</button>
         ) : (
@@ -244,5 +244,27 @@ function FriendHome({ me, initialTab = 'following', onOpen, onEditProfile }: { m
         />
       )}
     </div>
+  )
+}
+
+/** What the office looks like with friends in it, shown before signing in. */
+function OfficeEmpty() {
+  const now = Date.now()
+  const at = (min: number) => new Date(now + min * 60000).toISOString()
+  const seen = new Date(now).toISOString()
+  const mate = (id: string, name: string, phase: 'focus' | 'short' | 'idle', todoTitle: string | null) => ({
+    profile: { id, username: id, name },
+    status: { user_id: id, phase, todo_id: null, ends_at: phase === 'idle' ? null : at(18), seen_at: seen },
+    todoTitle,
+  })
+  const all = [mate('me', '나', 'focus', '자료구조 과제'), mate('a', '지민', 'focus', '토익 RC'), mate('b', '현우', 'short', null), mate('c', '서연', 'idle', null)]
+  return (
+    <>
+      <div className="empty-preview" aria-hidden>
+        <OfficeRoom all={all} meId="me" now={now} onTap={() => {}} />
+      </div>
+      <p className="empty-title">맞팔 친구와 한 방에서 집중해요</p>
+      <p className="sheet-sub">뽀모도로를 켜면 내 자리에 앉아요.</p>
+    </>
   )
 }

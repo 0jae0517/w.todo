@@ -176,7 +176,6 @@ function TodoItems({ items, color: c, editable, reactions, myId, onOpenTodo, onR
           >
             <div className="p-task" onPointerDown={editable ? dnd.start(t.id) : undefined} onContextMenu={(e) => editable && e.preventDefault()}>
               <span className="p-hl todo-title" style={c} onClick={tap(() => onOpenTodo?.(t.id))}>
-                {t.time && <span className="todo-time">{timeLabel(t.time)}</span>}
                 <span className="todo-text">{t.title}</span>
                 {t.routine_id && (
                   <span className="todo-repeat" title="반복">
@@ -184,13 +183,17 @@ function TodoItems({ items, color: c, editable, reactions, myId, onOpenTodo, onR
                     {repeatDays.get(t.routine_id) && <span>{shortRepeat(repeatDays.get(t.routine_id)!)}</span>}
                   </span>
                 )}
-                {t.focus_seconds > 0 && (
-                  <span className="tomato">
-                    {' '}
-                    <TomatoIcon /> {formatDuration(t.focus_seconds)}
-                  </span>
-                )}
               </span>
+              {(t.time || t.focus_seconds > 0) && (
+                <span className="p-meta" onClick={tap(() => onOpenTodo?.(t.id))}>
+                  {t.time && <span className="todo-time">{timeLabel(t.time)}</span>}
+                  {t.focus_seconds > 0 && (
+                    <span className="tomato">
+                      <TomatoIcon /> {formatDuration(t.focus_seconds)}
+                    </span>
+                  )}
+                </span>
+              )}
               {t.done && <ReactionBar list={reactions?.get(t.id) ?? []} myId={myId} onPick={onReact && ((e) => onReact(t.id, e))} />}
             </div>
             <button
