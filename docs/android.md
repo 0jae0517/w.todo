@@ -8,6 +8,22 @@
   - 뽀모도로가 끝나면 앱을 꺼 둬도 알림이 와요.
   - 안드로이드 뒤로 가기 버튼을 누르면 열린 창부터 닫혀요.
   - 템플릿 공유 링크는 웹 주소(wtodo.net)로 만들어져요.
+  - 회고 카드 이미지와 데이터 내보내기는 공유 창으로 열려서, 파일·드라이브에 저장하거나 바로 보낼 수 있어요.
+
+## 0. 제일 쉬운 방법: 설치 파일(APK) 받아서 깔기
+
+Android Studio 없이도 GitHub가 테스트용 설치 파일을 만들어 줘요. main에 코드가 올라갈 때마다 새로 만들어져요.
+
+1. 처음 한 번만, GitHub 저장소 **Settings → Secrets and variables → Actions → New repository secret**에서 아래 값을 넣어요 (Vercel 환경변수와 같은 값).
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+   - `VITE_KAKAO_REST_KEY` (카카오 로그인용)
+   - 이게 없으면 앱은 만들어지지만 로그인이 안 돼요. 넣은 뒤에는 **Actions → Android app → Run workflow**로 다시 만들어요.
+2. 저장소 **Actions → Android app**에서 맨 위 실행을 눌러 아래 **Artifacts**의 `w.todo-android`를 받아요 (zip 안에 `w.todo.apk`).
+3. 휴대폰으로 옮겨 열면 "출처를 알 수 없는 앱" 허용을 묻는데, 허용하고 설치해요.
+4. 새 버전도 같은 방법으로 받아 덮어 설치하면 돼요.
+
+이 파일은 나와 지인 테스트용이에요. 플레이스토어에는 아래 4번의 서명된 App Bundle을 올려요.
 
 ## 1. 한 번만 할 일: Supabase 설정
 

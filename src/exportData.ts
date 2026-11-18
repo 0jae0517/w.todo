@@ -1,5 +1,6 @@
 import { getState } from './store'
 import { todayKey } from './date'
+import { saveFile } from './share'
 
 /**
  * "내 데이터 내보내기": everything this device holds for the account
@@ -7,17 +8,7 @@ import { todayKey } from './date'
  * todos alone as a CSV that spreadsheets open.
  */
 
-function save(name: string, type: string, text: string) {
-  const blob = new Blob([text], { type })
-  const file = new File([blob], name, { type })
-  // the Android app's web view can't download; the share sheet can save the file
-  if (navigator.canShare?.({ files: [file] })) return navigator.share({ files: [file], title: name }).catch(() => {})
-  const a = document.createElement('a')
-  a.href = URL.createObjectURL(blob)
-  a.download = name
-  a.click()
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000)
-}
+const save = (name: string, type: string, text: string) => saveFile(name, new Blob([text], { type }))
 
 export function exportJson() {
   const { categories, todos, routines, sessions, courses, notes, ddays } = getState()

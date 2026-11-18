@@ -1,4 +1,5 @@
 import { shareBase } from './native'
+import { shareUrl } from './share'
 import { supabase } from './supabase'
 import { currentUserId } from './sync'
 import type { Profile } from './social'
@@ -90,16 +91,5 @@ export async function countUse(id: string) {
 
 /** Shares the link with the system share sheet, or copies it. Returns what happened. */
 export async function shareLink(t: Pick<Template, 'id' | 'title'>) {
-  const url = templateLink(t.id)
-  if (navigator.share) {
-    try {
-      await navigator.share({ title: `w.todo 템플릿: ${t.title}`, url })
-      return 'shared'
-    } catch (e) {
-      if (e instanceof DOMException && e.name === 'AbortError') return 'cancelled'
-      // sharing not allowed here; fall back to copying
-    }
-  }
-  await navigator.clipboard.writeText(url)
-  return 'copied'
+  return shareUrl(`w.todo 템플릿: ${t.title}`, templateLink(t.id))
 }
