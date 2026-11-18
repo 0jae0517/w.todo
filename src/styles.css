@@ -34,7 +34,7 @@ html, body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Pretendard', 'Noto Sans KR', 'Segoe UI', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Pretendard Variable', 'Pretendard', 'Noto Sans KR', 'Segoe UI', sans-serif;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -1035,6 +1035,8 @@ button.p-status:disabled { cursor: default; }
 .p-meta { display: flex; gap: 8px; align-items: center; font-size: 11px; color: var(--muted); padding: 2px 7px 1px; line-height: 1.3; }
 .p-meta .todo-time { font-size: 11px; margin: 0; }
 .p-meta .tomato svg { width: 12px; height: 12px; vertical-align: -2px; }
+/* in the list, focus time is a quiet note like the time and memo, not a red mark on every row */
+.p-meta .i-tomato { color: inherit; }
 /* chip and list pickers in place of native selects */
 .pick-block { margin-bottom: 16px; font-size: 14px; }
 .pick-label { display: block; margin-bottom: 8px; }

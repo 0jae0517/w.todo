@@ -5,6 +5,9 @@ import { isNative } from './native'
 import { startTimerLoop } from './pomodoro'
 import { startReminders } from './reminders'
 import { startSync } from './sync'
+// Pretendard for Android and Windows, whose default Korean fonts sit off-center in
+// fixed-height boxes; Apple devices keep their system font (it comes first in styles.css)
+import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css'
 import './styles.css'
 import { applyTheme } from './theme'
 import { trackVisualViewport } from './viewport'
