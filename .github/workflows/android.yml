@@ -1,0 +1,71 @@
+name: Android app
+
+# Builds an installable test APK of the Android app. Download it from the
+# run's "Artifacts" section (w.todo-android) and open it on the phone.
+#
+# The app needs the same values as the web app, set once under
+# Settings → Secrets and variables → Actions → Repository secrets:
+#   VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_KAKAO_REST_KEY (optional)
+# Without them the APK still builds but only works signed out.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - 'android/**'
+      - 'capacitor.config.ts'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'src/native.ts'
+      - 'src/share.ts'
+      - '.github/workflows/android.yml'
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+      - run: npm ci
+      - name: Build the web app
+        run: npx tsc --noEmit && npx vite build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_KAKAO_REST_KEY: ${{ secrets.VITE_KAKAO_REST_KEY }}
+      - run: npx cap sync android
+
+      # Reuse one debug signing key across runs, so a new APK installs over the
+      # old one instead of asking to uninstall it first (which drops the app's data).
+      - name: Restore the debug signing key
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: wtodo-debug-keystore
+      - name: Build the APK
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+      - name: Keep the debug signing key
+        if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+        uses: actions/cache/save@v4
+        continue-on-error: true
+        with:
+          path: ~/.android/debug.keystore
+          key: wtodo-debug-keystore
+
+      - run: mv android/app/build/outputs/apk/debug/app-debug.apk w.todo.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: w.todo-android
+          path: w.todo.apk
+          retention-days: 30

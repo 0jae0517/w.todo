@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { addDays, addMonths, fromKey, todayKey, toKey } from '../date'
 import { formatDuration } from '../pomodoro'
+import { saveFile } from '../share'
 import type { Category, Todo } from '../types'
 
 const MIN_DONE = 5
@@ -89,20 +90,7 @@ export default function Recap({ todos, categories }: { todos: Todo[]; categories
     canvas.current?.toBlob(async (blob) => {
       if (!blob) return
       const name = `w.todo-${stats.label.replace(/\s/g, '')}.png`
-      const file = new File([blob], name, { type: 'image/png' })
-      if (navigator.canShare?.({ files: [file] })) {
-        try {
-          await navigator.share({ files: [file], title: `${stats.label} 회고` })
-          return
-        } catch {
-          // cancelled; fall through to download
-        }
-      }
-      const a = document.createElement('a')
-      a.href = URL.createObjectURL(blob)
-      a.download = name
-      a.click()
-      URL.revokeObjectURL(a.href)
+      saveFile(name, blob, `${stats.label} 회고`).catch(() => {})
     })
 
   return (
