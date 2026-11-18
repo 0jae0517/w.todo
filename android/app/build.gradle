@@ -16,6 +16,19 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        // CI signs test APKs with one kept key (see .github/workflows/android.yml),
+        // so a new APK installs over the old one
+        debug {
+            def ks = System.getenv('WTODO_DEBUG_KEYSTORE')
+            if (ks) {
+                storeFile file(ks)
+                storePassword 'android'
+                keyAlias 'androiddebugkey'
+                keyPassword 'android'
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
