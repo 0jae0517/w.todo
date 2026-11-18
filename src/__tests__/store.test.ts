@@ -13,6 +13,8 @@ async function freshStore(seed?: object) {
   return import('../store')
 }
 
+const weekly = (days: number[]) => ({ days, every: 1, month_day: null, end_date: null })
+
 const todo = (id: string, updated_at: string, extra = {}) => ({
   id,
   title: id,
@@ -97,7 +99,7 @@ describe('repeating todos', () => {
     const s = await freshStore()
     s.addTodo('run', '2026-11-14', 'default')
     const id = s.getState().todos[0].id
-    s.setRepeat(id, [1]) // Mondays
+    s.setRepeat(id, weekly([1])) // Mondays
     const routineId = s.getState().routines[0].id
     const copies = s.getState().todos.filter((t) => t.routine_id === routineId && t.id !== id)
     expect(copies.length).toBeGreaterThan(0)
@@ -114,9 +116,51 @@ describe('repeating todos', () => {
     const s = await freshStore()
     s.addTodo('run', '2026-11-14', 'default')
     const id = s.getState().todos[0].id
-    s.setRepeat(id, [0, 1, 2, 3, 4, 5, 6])
+    s.setRepeat(id, weekly([0, 1, 2, 3, 4, 5, 6]))
     s.stopRepeat(id)
     expect(s.getState().todos.filter((t) => t.date > '2026-11-14')).toHaveLength(0)
     vi.useRealTimers()
+  })
+})
+
+describe('repeat rules', () => {
+  beforeEach(() => vi.unstubAllGlobals())
+  const base = { days: [] as number[], every: 1, month_day: null as number | null, start_date: '2026-11-02', end_date: null as string | null }
+
+  it('every other week skips the weeks in between', async () => {
+    const s = await freshStore()
+    const r = { ...base, days: [1], every: 2 } // Mondays from 2026-11-02
+    expect(s.repeatsOn(r, '2026-11-02')).toBe(true)
+    expect(s.repeatsOn(r, '2026-11-09')).toBe(false)
+    expect(s.repeatsOn(r, '2026-11-16')).toBe(true)
+  })
+
+  it('monthly falls on the last day of shorter months', async () => {
+    const s = await freshStore()
+    const r = { ...base, start_date: '2026-01-31', month_day: 31 }
+    expect(s.repeatsOn(r, '2026-02-28')).toBe(true)
+    expect(s.repeatsOn(r, '2026-03-30')).toBe(false)
+    expect(s.repeatsOn(r, '2026-03-31')).toBe(true)
+  })
+
+  it('stops after the end date', async () => {
+    vi.useFakeTimers({ now: new Date(2026, 10, 14, 12) })
+    const s = await freshStore()
+    s.addTodo('run', '2026-11-14', 'default')
+    const id = s.getState().todos[0].id
+    s.setRepeat(id, { ...weekly([0, 1, 2, 3, 4, 5, 6]), end_date: '2026-11-20' })
+    const dates = s.getState().todos.map((t) => t.date)
+    expect(dates).toContain('2026-11-20')
+    expect(dates.some((d) => d > '2026-11-20')).toBe(false)
+    vi.useRealTimers()
+  })
+})
+
+describe('D-day label', () => {
+  it('counts days to go and days since', async () => {
+    const s = await freshStore()
+    expect(s.ddayLabel('2026-11-18', '2026-11-15')).toBe('D-3')
+    expect(s.ddayLabel('2026-11-15', '2026-11-15')).toBe('D-day')
+    expect(s.ddayLabel('2026-11-13', '2026-11-15')).toBe('D+2')
   })
 })

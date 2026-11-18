@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { supabase } from './supabase'
 import { shownColor } from './store'
 import { currentUserId, useSync } from './sync'
-import type { Category, Todo } from './types'
+import type { Category, Course, Todo } from './types'
 
 export const EMOJIS = ['❤️', '👍', '🎉', '👏', '🔥', '😂', '😢'] as const
 
@@ -207,4 +207,63 @@ export function useMyProfile() {
   }, [uid])
   useEffect(reload, [reload])
   return { profile, reload }
+}
+
+// ---- cheers: a poke or a short message to someone I follow ----
+
+export type CheerKind = 'poke' | 'message'
+
+export interface Cheer {
+  id: string
+  from_id: string
+  kind: CheerKind
+  body: string
+  created_at: string
+  from: Profile | null
+}
+
+export const CHEER_MAX = 60
+
+export async function sendCheer(to: string, kind: CheerKind, body = '') {
+  const res = await db().from('cheers').insert({ from_id: me(), to_id: to, kind, body: kind === 'poke' ? '' : body.trim() })
+  // the server turns away a second poke or message within a few minutes
+  if (res.error?.message.includes('too_soon')) throw new Error('조금 전에 보냈어요. 잠시 뒤에 다시 보내 주세요.')
+  if (res.error?.message.includes('too_many')) throw new Error('오늘은 응원을 너무 많이 보냈어요. 내일 다시 보내 주세요.')
+  check(res)
+}
+
+/** Unread cheers sent to me, newest first. */
+export async function unreadCheers() {
+  const rows = check(
+    await db()
+      .from('cheers')
+      .select('id, from_id, kind, body, created_at, from:profiles!cheers_from_id_fkey(id, username, name)')
+      .eq('to_id', me())
+      .eq('read', false)
+      .order('created_at', { ascending: false })
+      .limit(20),
+  )
+  return (rows ?? []) as unknown as Cheer[]
+}
+
+export async function markCheersRead(ids: string[]) {
+  if (!ids.length) return
+  check(await db().from('cheers').update({ read: true }).in('id', ids).eq('to_id', me()))
+}
+
+// ---- a mutual friend's timetable, when they share it ----
+
+export async function getShareTimetable() {
+  const row = check(await db().from('profiles').select('share_timetable').eq('id', me()).maybeSingle()) as { share_timetable?: boolean } | null
+  return !!row?.share_timetable
+}
+
+export async function setShareTimetable(on: boolean) {
+  check(await db().from('profiles').update({ share_timetable: on }).eq('id', me()))
+}
+
+/** Their classes, or an empty list when they don't share them with me (the server decides). */
+export async function friendCourses(ownerId: string) {
+  const rows = check(await db().from('courses').select('*').eq('user_id', ownerId).eq('deleted', false))
+  return ((rows ?? []) as Course[]).map((c) => ({ ...c, color: shownColor(c.color) }))
 }

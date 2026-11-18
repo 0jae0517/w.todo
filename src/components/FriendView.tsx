@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { addDays, dayLabel, monthGrid, todayKey } from '../date'
 import { holidayName } from '../holidays'
-import { block, byTodo, followingIds, follow, friendData, react, reactionsFor, unfollow, unreact, type FollowState, type Profile, type Reaction } from '../social'
+import { block, byTodo, followingIds, follow, friendCourses, friendData, react, reactionsFor, unfollow, unreact, type FollowState, type Profile, type Reaction } from '../social'
 import { currentUserId } from '../sync'
-import type { Category, Todo } from '../types'
+import type { Category, Course, Todo } from '../types'
+import { CheerButtons } from './Cheers'
+import { TimetableGrid } from './Timetable'
+import { useStore } from '../store'
 import Calendar, { type DayStat } from './Calendar'
 import DayList from './DayList'
 import Heatmap from './Heatmap'
@@ -25,6 +28,16 @@ export default function FriendView({ friend, onBack }: { friend: Profile; onBack
   const isFollowing = state === 'following'
   const [err, setErr] = useState<string | null>(null)
   const myId = currentUserId()
+  // their timetable, when they share it with me (only mutual friends can)
+  const [courses, setCourses] = useState<Course[]>([])
+  const [view, setView] = useState<'todos' | 'timetable'>('todos')
+  const [overlay, setOverlay] = useState(true)
+  const mine = useStore().courses
+  useEffect(() => {
+    setCourses([])
+    if (state !== 'following') return
+    friendCourses(friend.id).then(setCourses).catch(() => {})
+  }, [friend.id, state])
 
   // load the whole month around the selected day
   const grid = monthGrid(selected)
@@ -144,6 +157,29 @@ export default function FriendView({ friend, onBack }: { friend: Profile; onBack
         <p className="empty">팔로우를 요청하고 상대가 수락하면 할 일을 보고 감정표현을 남길 수 있어요.</p>
       ) : (
         <>
+          {myId && myId !== friend.id && <CheerButtons friend={friend} />}
+          {courses.length > 0 && (
+            <div className="seg friend-seg" role="tablist">
+              <button role="tab" aria-selected={view === 'todos'} className={view === 'todos' ? 'on' : ''} onClick={() => setView('todos')}>
+                할 일
+              </button>
+              <button role="tab" aria-selected={view === 'timetable'} className={view === 'timetable' ? 'on' : ''} onClick={() => setView('timetable')}>
+                시간표
+              </button>
+            </div>
+          )}
+          {view === 'timetable' && courses.length > 0 ? (
+            <section className="friend-tt">
+              {mine.length > 0 && (
+                <label className="tt-overlay">
+                  <input type="checkbox" checked={overlay} onChange={(e) => setOverlay(e.target.checked)} />
+                  내 시간표 겹쳐 보기 <small>점선은 내 수업, 아무것도 없는 칸이 둘 다 비는 시간이에요</small>
+                </label>
+              )}
+              <TimetableGrid courses={courses} ghosts={overlay ? mine : []} />
+            </section>
+          ) : (
+          <>
           <Calendar selected={selected} onSelect={setSelected} mode={mode} onModeChange={setMode} stats={stats} />
           <h2 className="day-title">
             {dayLabel(selected)}
@@ -162,6 +198,8 @@ export default function FriendView({ friend, onBack }: { friend: Profile; onBack
               <h3 className="sub-title">잔디</h3>
               <Heatmap todos={year} categories={data.categories} />
             </section>
+          )}
+          </>
           )}
         </>
       )}

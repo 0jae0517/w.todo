@@ -8,7 +8,10 @@ import DayList from './components/DayList'
 import FriendStrip from './components/FriendStrip'
 import FriendView from './components/FriendView'
 import { FriendsSheet, OfficeTab, TemplatesTab, type FollowTab } from './components/Friends'
-import { CheckIcon, CloudIcon, FriendsIcon, OfficeIcon, PersonIcon, PlusIcon, TableIcon, TemplateIcon, TimerIcon } from './components/Icons'
+import { CheckIcon, CloudIcon, FriendsIcon, OfficeIcon, PersonIcon, PlusIcon, SearchIcon, TableIcon, TemplateIcon, TimerIcon } from './components/Icons'
+import SearchSheet from './components/Search'
+import { DdaySheet, DdayStrip } from './components/Dday'
+import CheerInbox from './components/Cheers'
 import Mascot, { ChalkFilter, type Mood } from './components/Mascot'
 import Me from './components/Me'
 import Pomodoro from './components/Pomodoro'
@@ -60,6 +63,8 @@ export default function App() {
     }
   }
   const [panel, setPanel] = useState<Panel>(null)
+  const [searching, setSearching] = useState(false)
+  const [ddaysOpen, setDdaysOpen] = useState(false)
   const [friend, setFriend] = useState<Profile | null>(null)
   // the friends popup, opened from the todo screen, 내 정보 or the office
   const [friends, setFriends] = useState<{ tab?: FollowTab; friend?: Profile } | null>(null)
@@ -97,6 +102,11 @@ export default function App() {
       <header className="top">
         <h1>{TITLES[tab]}</h1>
         <div className="top-actions">
+          {tab === 'todos' && !friend && (
+            <button className="icon-btn" onClick={() => setSearching(true)} aria-label="검색" title="검색">
+              <SearchIcon />
+            </button>
+          )}
           {tab === 'todos' && (
             <button className="icon-btn" onClick={() => setFriends({})} aria-label="친구" title="친구">
               <FriendsIcon />
@@ -125,6 +135,7 @@ export default function App() {
         </div>
       )}
       {tab === 'todos' && notice && <NoticeBanner notice={notice} onClose={closeNotice} />}
+      {tab === 'todos' && !friend && <CheerInbox onOpenFriend={(p) => setFriends({ friend: p })} />}
       {tab === 'todos' && <FriendStrip selected={friend} onSelect={setFriend} onFind={() => setFriends({})} />}
       {tab === 'todos' && friend && (
         <main>
@@ -133,6 +144,7 @@ export default function App() {
       )}
       {tab === 'todos' && !friend && (
         <>
+          <DdayStrip onOpen={() => setDdaysOpen(true)} />
           <Calendar
             selected={selected}
             onSelect={setSelected}
@@ -164,7 +176,7 @@ export default function App() {
       {tab === 'timer' && <Pomodoro todos={todos} />}
       {tab === 'office' && <OfficeTab onLogin={() => setTab('me')} onOpenFriend={(p) => setFriends({ friend: p })} />}
       {tab === 'templates' && <TemplatesTab />}
-      {tab === 'me' && <Me todos={todos} categories={categories} onOpenFollows={(t) => setFriends({ tab: t })} />}
+      {tab === 'me' && <Me todos={todos} categories={categories} onOpenFollows={(t) => setFriends({ tab: t })} onOpenDdays={() => setDdaysOpen(true)} />}
 
       <nav className="tabbar">
         <button className={tab === 'todos' ? 'on' : ''} onClick={() => setTab('todos')}>
@@ -208,6 +220,17 @@ export default function App() {
         <CourseSheet course={courses.find((c) => c.id === panel.id)} onClose={() => setPanel(null)} />
       )}
       {panel?.kind === 'categories' && <CategorySheet categories={categories} focus={panel.focus} onClose={() => setPanel(null)} />}
+      {searching && (
+        <SearchSheet
+          onClose={() => setSearching(false)}
+          onPick={(t) => {
+            setSearching(false)
+            setSelected(t.date)
+            setPanel({ kind: 'todo', id: t.id })
+          }}
+        />
+      )}
+      {ddaysOpen && <DdaySheet onClose={() => setDdaysOpen(false)} />}
       <ToastHost />
       <DialogHost />
     </div>

@@ -89,3 +89,24 @@ export const TemplateIcon = () => (
 export const HandCircleIcon = () => (
   <svg {...base} strokeWidth={2.6}><path d="M14.5 4.3C9.4 3 4.2 6 3.8 11.3c-.4 5 3.6 8.6 8.6 8.4 4.6-.2 8-3.6 7.8-8.1-.2-4-3.3-7-7.6-7.4-1.3-.1-2.6.1-3.6.5" /></svg>
 )
+export const SearchIcon = () => (
+  <svg {...base}><circle cx="11" cy="11" r="6.5" /><path d="M16 16l4.5 4.5" /></svg>
+)
+/** a note page, for todos with a memo */
+export const NoteIcon = () => (
+  <svg {...base}><path d="M6 3.5h8.5L19 8v12.5H6z" /><path d="M14 3.5V8.5h5M9 12.5h6M9 16h4" /></svg>
+)
+/** a small checklist, for todos with sub-items */
+export const ListCheckIcon = () => (
+  <svg {...base}><path d="M4 6.5l1.5 1.5 3-3M4 14.5l1.5 1.5 3-3M11.5 6.5h8.5M11.5 14.5h8.5" /></svg>
+)
+export const FlagIcon = () => (
+  <svg {...base}><path d="M5 21V4M5 4.5h11l-2.5 4 2.5 4H5" /></svg>
+)
+/** a fingertip poke */
+export const PokeIcon = () => (
+  <svg {...base}><path d="M9 11V4.5a1.5 1.5 0 013 0V10l5.2 1.1a2 2 0 011.6 2.3l-.9 4.6a3 3 0 01-3 2.5H11a3 3 0 01-2.4-1.2L5.5 15a1.6 1.6 0 012.4-2.1L9 14" /></svg>
+)
+export const ChatIcon = () => (
+  <svg {...base}><path d="M5 5.5h14a1.5 1.5 0 011.5 1.5v8.5A1.5 1.5 0 0119 17h-7l-4.5 3.5V17H5a1.5 1.5 0 01-1.5-1.5V7A1.5 1.5 0 015 5.5z" /></svg>
+)
